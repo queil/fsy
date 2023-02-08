@@ -7,6 +7,16 @@
     <IsPackable>true</IsPackable>
     <ToolCommandName>fsy</ToolCommandName>
     <LangVersion>preview</LangVersion>
+    <Authors>queil</Authors>
+    <Description>F# scripts launcher</Description>
+    <Copyright>2023 © queil</Copyright>
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    <RepositoryUrl>https://github.com/queil/fsy</RepositoryUrl>
+    <FsDocsSourceRepository>https://github.com/queil/fsy/tree/main</FsDocsSourceRepository>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+    <IncludeSymbols>true</IncludeSymbols>
+    <PackageLicenseExpression>Unlicense</PackageLicenseExpression>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
   </PropertyGroup>
 
   <ItemGroup>
