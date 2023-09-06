@@ -19,6 +19,7 @@ try
         IncludeHostEntryAssembly = false
         Target = "exe"
         Standalone = true
+        LangVersion = Some "preview"
         Args =
           fun scriptPath refs opts ->
             [ "--noframework"
