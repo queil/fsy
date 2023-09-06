@@ -20,6 +20,7 @@ try
         Target = "exe"
         Standalone = true
         LangVersion = Some "preview"
+        TargetProfile = "netcore"
         Args =
           fun scriptPath refs opts ->
             [ "--noframework"
