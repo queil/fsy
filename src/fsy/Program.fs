@@ -86,8 +86,9 @@ try
     let rtConfigPath = $"{Path.Combine(outDir, outName)}.runtimeconfig.json"
     File.WriteAllText(rtConfigPath, runtimeconfig)
     File.Copy(output.AssemblyFilePath, $"{Path.Combine(outDir, outName)}.dll", true)
-    Environment.ExitCode <- 0
-    
+
+  Environment.ExitCode <- 0
+
 with
  | :? Argu.ArguParseException as exn ->
       printfn "%s" exn.Message
