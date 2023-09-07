@@ -13,7 +13,7 @@ type Args =
     member this.Usage =
       match this with
       | Script _ -> "Compiles an F# script and publishes the dll"
-      | Run _ -> "Runs the script"
+      | Run -> "Runs the script"
       | Cache_Dir _ -> "Sets the cache directory. Default: ./.fsy"
       | Output_Dir _ -> "Output dir. Default: a new dir created in cwd (named after the input script file name)"
       | Force -> "Clears the cache and forces re-compilation"
