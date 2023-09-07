@@ -18,9 +18,8 @@ try
     { CompilerOptions.Default with
         IncludeHostEntryAssembly = false
         Target = "exe"
-        Standalone = true
+        Standalone = false
         LangVersion = Some "preview"
-        TargetProfile = "netcore"
         Args =
           fun scriptPath refs opts ->
             [ "--noframework"
@@ -43,7 +42,7 @@ try
             fun msg -> printfn $"{sw.Elapsed}: {msg}"
           else
             ignore
-        AutoLoadNugetReferences = false
+        AutoLoadNugetReferences = cmd.Contains Run
         UseCache = true
         CacheDir = cacheDir }
 
@@ -84,8 +83,8 @@ try
                 {| name = "Microsoft.NETCore.App"
                    version = $"{dotnetVersion}.0" |} |} |}
 
-    File.WriteAllText($"{Path.Combine(outDir, outName)}.runtimeconfig.json", runtimeconfig)
-
+    let rtConfigPath = $"{Path.Combine(outDir, outName)}.runtimeconfig.json"
+    File.WriteAllText(rtConfigPath, runtimeconfig)
     File.Copy(output.AssemblyFilePath, $"{Path.Combine(outDir, outName)}.dll", true)
     Environment.ExitCode <- 0
     
