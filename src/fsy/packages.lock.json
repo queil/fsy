@@ -20,12 +20,12 @@
       },
       "Queil.FSharp.FscHost": {
         "type": "Direct",
-        "requested": "[0.20.0-alpha.6, )",
-        "resolved": "0.20.0-alpha.6",
-        "contentHash": "xQb6fwlBnzzBIce7e8N2QFjme2+ryjvir8P/VXjOcjZ2vTvBisAv9q/6m7lrTXTumE3GbnrMIU9iXfm4vXUeyQ==",
+        "requested": "[0.21.0, )",
+        "resolved": "0.21.0",
+        "contentHash": "GMBQzp7UJ3axX8OnF396rG/KJSn3szJiXHPITjUnHErxu35UyuZzFl6mN2XkkoOP4XCogh1KEF+jY3z997ec1w==",
         "dependencies": {
-          "FSharp.Compiler.Service": "41.0.7",
-          "FSharp.Core": "6.0.7"
+          "FSharp.Compiler.Service": "[41.0.7]",
+          "FSharp.Core": "[6.0.7]"
         }
       },
       "FSharp.Compiler.Service": {
@@ -1131,12 +1131,12 @@
       },
       "Queil.FSharp.FscHost": {
         "type": "Direct",
-        "requested": "[0.20.0-alpha.6, )",
-        "resolved": "0.20.0-alpha.6",
-        "contentHash": "xQb6fwlBnzzBIce7e8N2QFjme2+ryjvir8P/VXjOcjZ2vTvBisAv9q/6m7lrTXTumE3GbnrMIU9iXfm4vXUeyQ==",
+        "requested": "[0.21.0, )",
+        "resolved": "0.21.0",
+        "contentHash": "GMBQzp7UJ3axX8OnF396rG/KJSn3szJiXHPITjUnHErxu35UyuZzFl6mN2XkkoOP4XCogh1KEF+jY3z997ec1w==",
         "dependencies": {
-          "FSharp.Compiler.Service": "43.7.400",
-          "FSharp.Core": "7.0.400"
+          "FSharp.Compiler.Service": "[43.7.400]",
+          "FSharp.Core": "[7.0.400]"
         }
       },
       "FSharp.Compiler.Service": {

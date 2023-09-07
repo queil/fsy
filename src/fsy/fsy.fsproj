@@ -25,7 +25,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Queil.FSharp.FscHost" Version="0.20.0-alpha.6" />
+    <PackageReference Include="Queil.FSharp.FscHost" Version="0.21.0" />
     <PackageReference Include="Argu" Version="6.*" />
   </ItemGroup>
 
