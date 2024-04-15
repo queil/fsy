@@ -4,12 +4,6 @@ open Yzl
 
 let trees = Yzl.seq
 
-trees [
-  "oak"
-  "pine"
-  "spruce"
-  "john"
-  "michigan"
-] 
-|> Yzl.render 
+trees [ "oak"; "pine"; "spruce"; "john"; "michigan" ]
+|> Yzl.render
 |> printf "%s"

@@ -8,7 +8,8 @@ type Args =
   | [<AltCommandLine("-f"); Inherit>] Force
   | [<AltCommandLine("-v"); Inherit>] Verbose
   | [<AltCommandLine("-r")>] Run
-  | [<Last; MainCommand; CliPrefix(CliPrefix.None)>] Script of ``script.fsx``:string
+  | [<Last; MainCommand; CliPrefix(CliPrefix.None)>] Script of ``script.fsx``: string
+
   interface IArgParserTemplate with
     member this.Usage =
       match this with

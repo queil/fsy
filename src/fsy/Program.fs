@@ -10,6 +10,7 @@ open System.Runtime.Versioning
 Environment.ExitCode <- 1
 
 let sw = Stopwatch.StartNew()
+
 try
   let cmd = Args.FromCmdLine()
   let verbose = cmd.Contains Verbose
@@ -90,10 +91,12 @@ try
   Environment.ExitCode <- 0
 
 with
- | :? Argu.ArguParseException as exn ->
-      printfn "%s" exn.Message
+| :? Argu.ArguParseException as exn -> printfn "%s" exn.Message
 
- | :? ScriptCompileError as exn ->
-  use _ = { new  IDisposable with member _.Dispose() = Console.ResetColor()}
+| :? ScriptCompileError as exn ->
+  use _ =
+    { new IDisposable with
+        member _.Dispose() = Console.ResetColor() }
+
   Console.ForegroundColor <- ConsoleColor.Red
   exn.Diagnostics |> Seq.iter (System.Console.Error.WriteLine)
