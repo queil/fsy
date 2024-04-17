@@ -45,7 +45,8 @@ try
             ignore
         AutoLoadNugetReferences = cmd.Contains Run
         UseCache = true
-        CacheDir = cacheDir }
+        CacheDir = cacheDir
+        }
 
 
   let beforeCompile = sw.ElapsedMilliseconds
