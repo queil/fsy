@@ -353,5 +353,5 @@ tests/unit/coverage.xml
 
 **/.idea
 **/.fsy
-**/.paket-fsch
 **/fsch.deps
+**/.fsch

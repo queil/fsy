@@ -1,4 +1,4 @@
-﻿open Queil.FSharp.FscHost
+open Queil.FSharp.FscHost
 open System.Text.Json
 open System.IO
 open Fsy.Cli
@@ -14,6 +14,7 @@ let sw = Stopwatch.StartNew()
 try
   let cmd = Args.FromCmdLine()
   let verbose = cmd.Contains Verbose
+  let fullScriptPath = Path.GetFullPath(cmd.GetResult Script)
 
   let compilerOptions =
     { CompilerOptions.Default with
@@ -27,13 +28,25 @@ try
               "--nowin32manifest"
               yield! CompilerOptions.Default.Args scriptPath refs opts ] }
 
-  let cacheDir = cmd.TryGetResult Cache_Dir |> Option.defaultValue "./.fsy"
+  let cacheDir =
+    Path.GetFullPath(cmd.TryGetResult Cache_Dir |> Option.defaultValue "./.fsy")
 
-  if cmd.Contains Force && Directory.Exists cacheDir then
-    if verbose then
-      printfn $"Deleting directory %s{cacheDir} recursively..."
+  if cmd.Contains Force then
 
-    Directory.Delete(cacheDir, true)
+    if Directory.Exists cacheDir then
+      if verbose then
+        printfn $"Deleting directory %s{cacheDir} recursively..."
+
+      Directory.Delete(cacheDir, true)
+
+
+    let fschDir = Path.Combine(Path.GetDirectoryName(fullScriptPath), ".fsch")
+
+    if Directory.Exists fschDir then
+      if verbose then
+        printfn $"Deleting directory %s{fschDir} recursively..."
+
+      Directory.Delete(fschDir, true)
 
   let options =
     { Options.Default with
@@ -45,13 +58,12 @@ try
             ignore
         AutoLoadNugetReferences = cmd.Contains Run
         UseCache = true
-        CacheDir = cacheDir
-        }
+        CacheDir = cacheDir }
 
 
   let beforeCompile = sw.ElapsedMilliseconds
 
-  let script = Queil.FSharp.FscHost.File(cmd.GetResult Script)
+  let script = Queil.FSharp.FscHost.File(fullScriptPath)
 
   let output = CompilerHost.getAssembly options script |> Async.RunSynchronously
 
