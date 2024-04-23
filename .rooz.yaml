@@ -1,0 +1,6 @@
+image: ghcr.io/queil/image:dotnet-8
+extraRepos:
+- git@github.com:queil/fsc-host
+shell: zellij
+caches:
+- ~/.nuget
