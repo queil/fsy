@@ -1,5 +1,5 @@
 image: ghcr.io/queil/image:dotnet-8
-extraRepos:
+extra_repos:
 - git@github.com:queil/fsc-host
 shell: zellij
 caches:
