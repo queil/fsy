@@ -1,3 +1,4 @@
+open Argu
 open Queil.FSharp.FscHost
 open System.Text.Json
 open System.IO
@@ -14,71 +15,105 @@ let sw = Stopwatch.StartNew()
 try
   let cmd = Args.FromCmdLine()
   let verbose = cmd.Contains Verbose
-  let fullScriptPath = Path.GetFullPath(cmd.GetResult Script)
 
-  let compilerOptions =
-    { CompilerOptions.Default with
-        IncludeHostEntryAssembly = false
-        Target = "exe"
-        Standalone = false
-        LangVersion = Some "preview"
-        Args =
-          fun scriptPath refs opts ->
-            [ "--noframework"
-              "--nowin32manifest"
-              yield! CompilerOptions.Default.Args scriptPath refs opts ] }
+  let installFsxExtensions () =
+    let targetDir =
+      Path.Combine(
+        Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
+        ".fsharp",
+        "fsx-extensions",
+        ".fsch"
+      )
 
-  let cacheDir =
-    Path.GetFullPath(cmd.TryGetResult Cache_Dir |> Option.defaultValue "./.fsy")
+    Directory.CreateDirectory(targetDir) |> ignore
+    let sourceDir = Path.GetDirectoryName(Assembly.GetEntryAssembly().Location)
 
-  if cmd.Contains Force then
+    for (sourcePath, targetPath) in
+      Directory.EnumerateFiles(sourceDir, "*.dll")
+      |> Seq.map FileInfo
+      |> Seq.map (fun f -> Path.Combine(sourceDir, f.Name), Path.Combine(targetDir, f.Name)) do
+      File.Copy(sourcePath, targetPath, true)
 
-    if Directory.Exists cacheDir then
-      if verbose then
-        printfn $"Deleting directory %s{cacheDir} recursively..."
+  let compileScript (args: ParseResults<ScriptArgs>) (script: Queil.FSharp.FscHost.Script) =
+    let compilerOptions =
+      { CompilerOptions.Default with
+          IncludeHostEntryAssembly = false
+          Target = "exe"
+          Standalone = false
+          LangVersion = Some "preview"
+          Args =
+            fun scriptPath refs opts ->
+              [ "--noframework"
+                "--nowin32manifest"
+                yield! CompilerOptions.Default.Args scriptPath refs opts ] }
 
-      Directory.Delete(cacheDir, true)
+    let cacheDir =
+      Path.GetFullPath(args.TryGetResult Cache_Dir |> Option.defaultValue "./.fsy")
 
+    if args.Contains Force then
 
-    let fschDir = Path.Combine(Path.GetDirectoryName(fullScriptPath), ".fsch")
+      if Directory.Exists cacheDir then
+        if verbose then
+          printfn $"Deleting directory %s{cacheDir} recursively..."
 
-    if Directory.Exists fschDir then
-      if verbose then
-        printfn $"Deleting directory %s{fschDir} recursively..."
+        Directory.Delete(cacheDir, true)
 
-      Directory.Delete(fschDir, true)
+      let fschDir =
+        Path.Combine(
+          Path.GetDirectoryName(
+            match script with
+            | File path -> path
+            | Inline _ -> "inline"
+          ),
+          ".fsch"
+        )
 
-  let options =
-    { Options.Default with
-        Compiler = compilerOptions
-        Logger =
-          if verbose then
-            fun msg -> printfn $"{sw.Elapsed}: {msg}"
-          else
-            ignore
-        AutoLoadNugetReferences = cmd.Contains Run
-        UseCache = true
-        CacheDir = cacheDir }
+      if Directory.Exists fschDir then
+        if verbose then
+          printfn $"Deleting directory %s{fschDir} recursively..."
 
+        Directory.Delete(fschDir, true)
 
-  let beforeCompile = sw.ElapsedMilliseconds
+    let options =
+      { Options.Default with
+          Compiler = compilerOptions
+          Logger =
+            if verbose then
+              fun msg -> printfn $"{sw.Elapsed}: {msg}"
+            else
+              ignore
+          AutoLoadNugetReferences = cmd.Contains Run
+          UseCache = true
+          CacheDir = cacheDir }
 
-  let script = Queil.FSharp.FscHost.File(fullScriptPath)
+    let beforeCompile = sw.ElapsedMilliseconds
+    let output = CompilerHost.getAssembly options script |> Async.RunSynchronously
 
-  let output = CompilerHost.getAssembly options script |> Async.RunSynchronously
+    if verbose then
+      printfn $"fsc-host: {sw.ElapsedMilliseconds - beforeCompile} ms"
 
-  if verbose then
-    printfn $"fsc-host: {sw.ElapsedMilliseconds - beforeCompile} ms"
+    output
 
-  if cmd.Contains Run then
+  let getScript (args: ParseResults<ScriptArgs>) =
+    let scriptFullPath = Path.GetFullPath(args.GetResult Script)
+    Queil.FSharp.FscHost.File(scriptFullPath)
+
+  match cmd.GetSubCommand() with
+  | Run args ->
+    let script = args |> getScript
+    let output = compileScript args script
     output.Assembly.Value.EntryPoint.Invoke(null, Array.empty) |> ignore
-  else
+    ()
+  | Compile args ->
+    let script = args |> getScript
+    let output = compileScript args script
+
     let defaultOutDir =
       match script with
       | File f -> Path.GetFileNameWithoutExtension(f)
       | Inline _ -> "inline"
 
-    let outDir = cmd.GetResult(Output_Dir, $"./{defaultOutDir}")
+    let outDir = args.GetResult(Output_Dir, $"./{defaultOutDir}")
     Directory.CreateDirectory(outDir) |> ignore
     let outName = DirectoryInfo(outDir).Name
 
@@ -100,12 +135,13 @@ try
     let rtConfigPath = $"{Path.Combine(outDir, outName)}.runtimeconfig.json"
     File.WriteAllText(rtConfigPath, runtimeconfig)
     File.Copy(output.AssemblyFilePath, $"{Path.Combine(outDir, outName)}.dll", true)
+  | Install_Fsx_Extensions -> installFsxExtensions ()
+  | _ -> ()
 
   Environment.ExitCode <- 0
 
 with
 | :? Argu.ArguParseException as exn -> printfn "%s" exn.Message
-
 | :? ScriptCompileError as exn ->
   use _ =
     { new IDisposable with
