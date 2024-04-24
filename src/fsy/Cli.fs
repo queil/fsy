@@ -2,22 +2,33 @@ namespace Fsy.Cli
 
 open Argu
 
-type Args =
+type ScriptArgs =
   | [<AltCommandLine("-c"); Inherit>] Cache_Dir of string
   | [<AltCommandLine("-o"); Inherit>] Output_Dir of string
   | [<AltCommandLine("-f"); Inherit>] Force
-  | [<AltCommandLine("-v"); Inherit>] Verbose
-  | [<AltCommandLine("-r")>] Run
-  | [<Last; MainCommand; CliPrefix(CliPrefix.None)>] Script of ``script.fsx``: string
+  | [<Last; CliPrefix(CliPrefix.None); MainCommand>] Script of ``script.fsx``: string
 
   interface IArgParserTemplate with
     member this.Usage =
       match this with
-      | Script _ -> "Compiles an F# script and publishes the dll"
-      | Run -> "Runs the script"
+      | Script _ -> "Path of the F# script to run/compile"
       | Cache_Dir _ -> "Sets the cache directory. Default: ./.fsy"
       | Output_Dir _ -> "Output dir. Default: a new dir created in cwd (named after the input script file name)"
       | Force -> "Clears the cache and forces re-compilation"
+
+type Args =
+  | [<AltCommandLine("-v"); Inherit>] Verbose
+  | [<CliPrefix(CliPrefix.None); SubCommand>] InstallFsxExtensions
+  | [<CliPrefix(CliPrefix.None)>] Run of ParseResults<ScriptArgs>
+  | [<CliPrefix(CliPrefix.None)>] Compile of ParseResults<ScriptArgs>
+
+  interface IArgParserTemplate with
+    member this.Usage =
+      match this with
+      | Run _ -> "Runs the script"
+      | Compile _ -> "Compiles the script"
+      | InstallFsxExtensions ->
+        "Copies the dlls required for editor support to a stable location: ~/.fsharp/fsx-extensions/.fsch"
       | Verbose -> "Shows some log messages"
 
   static member FromCmdLine() =
