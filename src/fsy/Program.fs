@@ -135,8 +135,10 @@ try
     let rtConfigPath = $"{Path.Combine(outDir, outName)}.runtimeconfig.json"
     File.WriteAllText(rtConfigPath, runtimeconfig)
     File.Copy(output.AssemblyFilePath, $"{Path.Combine(outDir, outName)}.dll", true)
-  | InstallFsxExtensions -> installFsxExtensions ()
+  | Install_Fsx_Extensions -> installFsxExtensions ()
   | _ -> ()
+
+  Environment.ExitCode <- 0
 
 with
 | :? Argu.ArguParseException as exn -> printfn "%s" exn.Message

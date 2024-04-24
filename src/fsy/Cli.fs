@@ -18,7 +18,7 @@ type ScriptArgs =
 
 type Args =
   | [<AltCommandLine("-v"); Inherit>] Verbose
-  | [<CliPrefix(CliPrefix.None); SubCommand>] InstallFsxExtensions
+  | [<CliPrefix(CliPrefix.None); SubCommand; AltCommandLine("ifsx")>] Install_Fsx_Extensions
   | [<CliPrefix(CliPrefix.None)>] Run of ParseResults<ScriptArgs>
   | [<CliPrefix(CliPrefix.None)>] Compile of ParseResults<ScriptArgs>
 
@@ -27,7 +27,7 @@ type Args =
       match this with
       | Run _ -> "Runs the script"
       | Compile _ -> "Compiles the script"
-      | InstallFsxExtensions ->
+      | Install_Fsx_Extensions ->
         "Copies the dlls required for editor support to a stable location: ~/.fsharp/fsx-extensions/.fsch"
       | Verbose -> "Shows some log messages"
 
