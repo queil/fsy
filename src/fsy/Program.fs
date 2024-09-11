@@ -1,3 +1,5 @@
+open System.Security.Cryptography
+open System.Text
 open Argu
 open Queil.FSharp.FscHost
 open System.Text.Json
@@ -9,6 +11,19 @@ open System.Reflection
 open System.Runtime.Versioning
 
 Environment.ExitCode <- 1
+
+[<RequireQualifiedAccess>]
+module private Hash =
+    let sha256 (s: string) =
+        use sha256 = SHA256.Create()
+
+        s
+        |> Encoding.UTF8.GetBytes
+        |> sha256.ComputeHash
+        |> BitConverter.ToString
+        |> _.Replace("-", "")
+
+    let short (s: string) = s[0..10].ToLowerInvariant()
 
 let sw = Stopwatch.StartNew()
 
@@ -47,25 +62,30 @@ try
                 "--nowin32manifest"
                 yield! CompilerOptions.Default.Args scriptPath refs opts ] }
 
-    let cacheDir =
-      Path.GetFullPath(args.TryGetResult Cache_Dir |> Option.defaultValue "./.fsy")
+    let cacheDirOverride =
+      args.TryGetResult Cache_Dir |> Option.map(Path.GetFullPath)
+        
 
     if args.Contains Force then
 
+      match cacheDirOverride with
+      | Some(cacheDir) -> 
       if Directory.Exists cacheDir then
         if verbose then
           printfn $"Deleting directory %s{cacheDir} recursively..."
 
         Directory.Delete(cacheDir, true)
+      | None -> ()
 
       let fschDir =
         Path.Combine(
-          Path.GetDirectoryName(
+           Path.GetTempPath(),
+           ".fsch",
+          
             match script with
-            | File path -> path
-            | Inline _ -> "inline"
-          ),
-          ".fsch"
+            | File path -> File.ReadAllText(path)
+            | Inline _ -> failwith "Unreachable"
+            |> Hash.sha256 |> Hash.short
         )
 
       if Directory.Exists fschDir then
@@ -84,13 +104,16 @@ try
               ignore
           AutoLoadNugetReferences = cmd.Contains Run
           UseCache = true
-          CacheDir = cacheDir }
-
+      } |> fun opts ->
+           match cacheDirOverride with
+           | Some cacheDir -> { opts with OutputDir = cacheDir }
+           | None -> opts
+      
     let beforeCompile = sw.ElapsedMilliseconds
     let output = CompilerHost.getAssembly options script |> Async.RunSynchronously
 
     if verbose then
-      printfn $"fsc-host: {sw.ElapsedMilliseconds - beforeCompile} ms"
+      printfn $"fsch: {sw.ElapsedMilliseconds - beforeCompile} ms"
 
     output
 
