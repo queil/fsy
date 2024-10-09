@@ -20,12 +20,14 @@ type Args =
   | [<AltCommandLine("-v"); Inherit>] Verbose
   | [<CliPrefix(CliPrefix.None); SubCommand; AltCommandLine("ifsx")>] Install_Fsx_Extensions
   | [<CliPrefix(CliPrefix.None)>] Run of ParseResults<ScriptArgs>
+  | [<CliPrefix(CliPrefix.None)>] Exec of ParseResults<ScriptArgs>
   | [<CliPrefix(CliPrefix.None)>] Compile of ParseResults<ScriptArgs>
 
   interface IArgParserTemplate with
     member this.Usage =
       match this with
-      | Run _ -> "Runs the script"
+      | Run _ -> "Runs the script in-process"
+      | Exec _ -> "Runs the script out-of-process"
       | Compile _ -> "Compiles the script"
       | Install_Fsx_Extensions ->
         "Copies the dlls required for editor support to a stable location: ~/.fsharp/fsx-extensions/.fsch"

@@ -5,6 +5,10 @@
 
 open Yzl
 
+let args = System.Environment.CommandLine
+
+printfn "%A" args
+
 let trees = Yzl.seq
 
 trees [ "oak"; "pine"; "spruce"; "john"; "michigan" ]

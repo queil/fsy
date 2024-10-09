@@ -28,7 +28,21 @@ module private Hash =
 let sw = Stopwatch.StartNew()
 
 try
-  let cmd = Args.FromCmdLine()
+
+  let rawCmd = Environment.GetCommandLineArgs() |> Seq.toList |> fun l -> l[1..]
+  let indexOfDoubleDash = rawCmd |> List.tryFindIndex (fun f -> f = "--")
+
+  let (fsyArgs, passThruArgs) =
+    match indexOfDoubleDash with
+    | Some idx -> 
+      let fsyArgs, scriptArgs =
+        rawCmd |> List.splitAt idx
+      fsyArgs, scriptArgs[1..]  
+    | None -> rawCmd |> Seq.toList, []
+
+  let parser = ArgumentParser.Create<Args>()
+
+  let cmd = parser.Parse (fsyArgs |> Seq.toArray)
   let verbose = cmd.Contains Verbose
 
   let installFsxExtensions () =
@@ -54,7 +68,7 @@ try
       { CompilerOptions.Default with
           IncludeHostEntryAssembly = false
           Target = "exe"
-          Standalone = false
+          Standalone = cmd.Contains Exec
           LangVersion = Some "preview"
           Args =
             fun scriptPath refs opts ->
@@ -64,7 +78,6 @@ try
 
     let cacheDirOverride =
       args.TryGetResult Cache_Dir |> Option.map(Path.GetFullPath)
-        
 
     if args.Contains Force then
 
@@ -121,13 +134,8 @@ try
     let scriptFullPath = Path.GetFullPath(args.GetResult Script)
     Queil.FSharp.FscHost.File(scriptFullPath)
 
-  match cmd.GetSubCommand() with
-  | Run args ->
-    let script = args |> getScript
-    let output = compileScript args script
-    output.Assembly.Value.EntryPoint.Invoke(null, Array.empty) |> ignore
-    ()
-  | Compile args ->
+  
+  let compile args =
     let script = args |> getScript
     let output = compileScript args script
 
@@ -157,7 +165,43 @@ try
 
     let rtConfigPath = $"{Path.Combine(outDir, outName)}.runtimeconfig.json"
     File.WriteAllText(rtConfigPath, runtimeconfig)
-    File.Copy(output.AssemblyFilePath, $"{Path.Combine(outDir, outName)}.dll", true)
+    let outputFile = $"{Path.Combine(outDir, outName)}.dll"
+    File.Copy(output.AssemblyFilePath, outputFile, true)
+    outputFile
+
+  match cmd.GetSubCommand() with
+  | Run args ->
+    let script = args |> getScript
+    let output = compileScript args script
+    output.Assembly.Value.EntryPoint.Invoke(null, Array.empty) |> ignore
+    ()
+  | Exec args ->
+     let outputFile = compile args
+     let args = ["exec"; outputFile; yield! passThruArgs]
+     let psi = ProcessStartInfo()
+     psi.FileName <- "dotnet"
+     psi.Arguments <- String.Join(" ", args)
+     psi.RedirectStandardOutput <- true
+     psi.RedirectStandardError <- true
+     psi.UseShellExecute <- false
+     psi.CreateNoWindow <- true
+     
+     use p = new Process()
+     p.EnableRaisingEvents <- true
+     p.OutputDataReceived.Add(fun data -> Console.Out.WriteLine(data.Data))
+     p.ErrorDataReceived.Add(fun data -> Console.Error.WriteLine(data.Data))
+
+     p.StartInfo <- psi
+
+     if p.Start() |> not then
+       failwithf "Process failed starting"
+     p.BeginOutputReadLine()
+     p.BeginErrorReadLine()
+     p.WaitForExit();
+   
+  | Compile args ->
+    compile args |> ignore
+    ()
   | Install_Fsx_Extensions -> installFsxExtensions ()
   | _ -> ()
 
