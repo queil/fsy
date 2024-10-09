@@ -68,7 +68,7 @@ try
       { CompilerOptions.Default with
           IncludeHostEntryAssembly = false
           Target = "exe"
-          Standalone = cmd.Contains Exec
+          Standalone = false
           LangVersion = Some "preview"
           Args =
             fun scriptPath refs opts ->
@@ -134,7 +134,6 @@ try
     let scriptFullPath = Path.GetFullPath(args.GetResult Script)
     Queil.FSharp.FscHost.File(scriptFullPath)
 
-  
   let compile args =
     let script = args |> getScript
     let output = compileScript args script
@@ -174,31 +173,7 @@ try
     let script = args |> getScript
     let output = compileScript args script
     output.Assembly.Value.EntryPoint.Invoke(null, Array.empty) |> ignore
-    ()
-  | Exec args ->
-     let outputFile = compile args
-     let args = ["exec"; outputFile; yield! passThruArgs]
-     let psi = ProcessStartInfo()
-     psi.FileName <- "dotnet"
-     psi.Arguments <- String.Join(" ", args)
-     psi.RedirectStandardOutput <- true
-     psi.RedirectStandardError <- true
-     psi.UseShellExecute <- false
-     psi.CreateNoWindow <- true
-     
-     use p = new Process()
-     p.EnableRaisingEvents <- true
-     p.OutputDataReceived.Add(fun data -> Console.Out.WriteLine(data.Data))
-     p.ErrorDataReceived.Add(fun data -> Console.Error.WriteLine(data.Data))
-
-     p.StartInfo <- psi
-
-     if p.Start() |> not then
-       failwithf "Process failed starting"
-     p.BeginOutputReadLine()
-     p.BeginErrorReadLine()
-     p.WaitForExit();
-   
+    () 
   | Compile args ->
     compile args |> ignore
     ()
