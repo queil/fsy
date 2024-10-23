@@ -191,3 +191,10 @@ with
 
   Console.ForegroundColor <- ConsoleColor.Red
   exn.Diagnostics |> Seq.iter (System.Console.Error.WriteLine)
+| :? TargetInvocationException as exn ->
+  use _ =
+    { new IDisposable with
+        member _.Dispose() = Console.ResetColor() }
+
+  Console.ForegroundColor <- ConsoleColor.Red
+  $"ERROR: {exn.InnerException.Message}" |> System.Console.Error.WriteLine
