@@ -14,35 +14,34 @@ Environment.ExitCode <- 1
 
 [<RequireQualifiedAccess>]
 module private Hash =
-    let sha256 (s: string) =
-        use sha256 = SHA256.Create()
+  let sha256 (s: string) =
+    use sha256 = SHA256.Create()
 
-        s
-        |> Encoding.UTF8.GetBytes
-        |> sha256.ComputeHash
-        |> BitConverter.ToString
-        |> _.Replace("-", "")
+    s
+    |> Encoding.UTF8.GetBytes
+    |> sha256.ComputeHash
+    |> BitConverter.ToString
+    |> _.Replace("-", "")
 
-    let short (s: string) = s[0..10].ToLowerInvariant()
+  let short (s: string) = s[0..10].ToLowerInvariant()
 
 let sw = Stopwatch.StartNew()
 
 try
 
-  let rawCmd = Environment.GetCommandLineArgs() |> Seq.toList |> fun l -> l[1..]
+  let rawCmd = Environment.GetCommandLineArgs() |> Seq.toList |> (fun l -> l[1..])
   let indexOfDoubleDash = rawCmd |> List.tryFindIndex (fun f -> f = "--")
 
   let (fsyArgs, passThruArgs) =
     match indexOfDoubleDash with
-    | Some idx -> 
-      let fsyArgs, scriptArgs =
-        rawCmd |> List.splitAt idx
-      fsyArgs, scriptArgs[1..]  
+    | Some idx ->
+      let fsyArgs, scriptArgs = rawCmd |> List.splitAt idx
+      fsyArgs, scriptArgs[1..]
     | None -> rawCmd |> Seq.toList, []
 
   let parser = ArgumentParser.Create<Args>()
 
-  let cmd = parser.Parse (fsyArgs |> Seq.toArray)
+  let cmd = parser.Parse(fsyArgs |> Seq.toArray)
   let verbose = cmd.Contains Verbose
 
   let installFsxExtensions () =
@@ -63,7 +62,7 @@ try
       |> Seq.map (fun f -> Path.Combine(sourceDir, f.Name), Path.Combine(targetDir, f.Name)) do
       File.Copy(sourcePath, targetPath, true)
 
-  let compileScript (args: ParseResults<ScriptArgs>) (script: Queil.FSharp.FscHost.Script) =
+  let compileScript (args: ParseResults<ScriptArgs>) (filePath: string) =
     let compilerOptions =
       { CompilerOptions.Default with
           IncludeHostEntryAssembly = false
@@ -76,36 +75,28 @@ try
                 "--nowin32manifest"
                 yield! CompilerOptions.Default.Args scriptPath refs opts ] }
 
-    let cacheDirOverride =
-      args.TryGetResult Cache_Dir |> Option.map(Path.GetFullPath)
+    let cacheDirOverride = args.TryGetResult Cache_Dir |> Option.map (Path.GetFullPath)
 
     if args.Contains Force then
 
       match cacheDirOverride with
-      | Some(cacheDir) -> 
-      if Directory.Exists cacheDir then
-        if verbose then
-          printfn $"Deleting directory %s{cacheDir} recursively..."
+      | Some(cacheDir) ->
+        if Directory.Exists cacheDir then
+          if verbose then
+            printfn $"Deleting directory %s{cacheDir} recursively..."
 
-        Directory.Delete(cacheDir, true)
-      | None -> ()
+          Directory.Delete(cacheDir, true)
+      | None ->
+        ()
 
-      let fschDir =
-        Path.Combine(
-           Path.GetTempPath(),
-           ".fsch",
-          
-            match script with
-            | File path -> File.ReadAllText(path)
-            | Inline _ -> failwith "Unreachable"
-            |> Hash.sha256 |> Hash.short
-        )
+        let fschDir =
+          Path.Combine(Path.GetTempPath(), ".fsch", File.ReadAllText filePath |> Hash.sha256 |> Hash.short)
 
-      if Directory.Exists fschDir then
-        if verbose then
-          printfn $"Deleting directory %s{fschDir} recursively..."
+        if Directory.Exists fschDir then
+          if verbose then
+            printfn $"Deleting directory %s{fschDir} recursively..."
 
-        Directory.Delete(fschDir, true)
+          Directory.Delete(fschDir, true)
 
     let options =
       { Options.Default with
@@ -116,33 +107,46 @@ try
             else
               ignore
           AutoLoadNugetReferences = cmd.Contains Run
-          UseCache = true
-      } |> fun opts ->
-           match cacheDirOverride with
-           | Some cacheDir -> { opts with OutputDir = cacheDir }
-           | None -> opts
-      
+          UseCache = true }
+      |> fun opts ->
+        match cacheDirOverride with
+        | Some cacheDir -> { opts with OutputDir = cacheDir }
+        | None -> opts
+
+    let scriptPath, shadowCopyWithExtension =
+      match filePath with
+      | path when path |> Path.HasExtension -> path, false
+      | path ->
+        let newPath =
+          Path.ChangeExtension(path, $"""{Guid.NewGuid().ToString("n")[..10]}.fsx""")
+
+        File.Copy(path, newPath)
+        newPath, true
+
     let beforeCompile = sw.ElapsedMilliseconds
-    let output = CompilerHost.getAssembly options script |> Async.RunSynchronously
 
-    if verbose then
-      printfn $"fsch: {sw.ElapsedMilliseconds - beforeCompile} ms"
+    try
+      let output =
+        CompilerHost.getAssembly options (Queil.FSharp.FscHost.File scriptPath)
+        |> Async.RunSynchronously
 
-    output
+      if verbose then
+        printfn $"fsch: {sw.ElapsedMilliseconds - beforeCompile} ms"
 
-  let getScript (args: ParseResults<ScriptArgs>) =
-    let scriptFullPath = Path.GetFullPath(args.GetResult Script)
-    Queil.FSharp.FscHost.File(scriptFullPath)
+      output
+    finally
+      if shadowCopyWithExtension then
+        if verbose then
+          printfn $"Deleting shadowed file: {scriptPath}"
+
+        File.Delete scriptPath
+
+  let getScript (args: ParseResults<ScriptArgs>) = Path.GetFullPath(args.GetResult Script)
 
   let compile args =
     let script = args |> getScript
     let output = compileScript args script
-
-    let defaultOutDir =
-      match script with
-      | File f -> Path.GetFileNameWithoutExtension(f)
-      | Inline _ -> "inline"
-
+    let defaultOutDir = Path.GetFileNameWithoutExtension(script)
     let outDir = args.GetResult(Output_Dir, $"./{defaultOutDir}")
     Directory.CreateDirectory(outDir) |> ignore
     let outName = DirectoryInfo(outDir).Name
@@ -173,7 +177,7 @@ try
     let script = args |> getScript
     let output = compileScript args script
     output.Assembly.Value.EntryPoint.Invoke(null, Array.empty) |> ignore
-    () 
+    ()
   | Compile args ->
     compile args |> ignore
     ()
@@ -191,6 +195,13 @@ with
 
   Console.ForegroundColor <- ConsoleColor.Red
   exn.Diagnostics |> Seq.iter (System.Console.Error.WriteLine)
+| :? FileNotFoundException as exn ->
+  use _ =
+    { new IDisposable with
+        member _.Dispose() = Console.ResetColor() }
+
+  Console.ForegroundColor <- ConsoleColor.Red
+  $"ERROR: {exn.Message}" |> System.Console.Error.WriteLine
 | :? TargetInvocationException as exn ->
   use _ =
     { new IDisposable with
