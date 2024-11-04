@@ -118,7 +118,7 @@ try
       | path when path |> Path.HasExtension -> path, false
       | path ->
         let newPath =
-          Path.ChangeExtension(Path.GetDirectoryName(path), $"""{ path |> File.ReadAllText |> Hash.sha256 |> Hash.short }.fsx""")
+          Path.Combine(Path.GetDirectoryName(path), $"""{ path |> File.ReadAllText |> Hash.sha256 |> Hash.short }.fsx""")
 
         printfn $"Shadowing file %s{originalFilePath} to %s{newPath}"
         File.Copy(path, newPath)
