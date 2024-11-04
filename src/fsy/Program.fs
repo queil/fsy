@@ -118,9 +118,10 @@ try
       | path when path |> Path.HasExtension -> path, false
       | path ->
         let newPath =
-          Path.ChangeExtension(path, $"""{Guid.NewGuid().ToString("n")[..10]}.fsx""")
+          Path.ChangeExtension(path, $"""{ path |> Hash.sha256 |> Hash.short }.fsx""")
 
-        File.Move(path, newPath)
+        printfn $"Creating shadowing file at %s{newPath}"
+        File.Copy(path, newPath)
         newPath, true
 
     let beforeCompile = sw.ElapsedMilliseconds
@@ -137,9 +138,9 @@ try
     finally
       if movedWithExtension then
         if verbose then
-          printfn $"Moving file: {newFilePath} -> {originalFilePath}"
+          printfn $"Deleting shadowed file: {newFilePath}"
 
-        File.Move(newFilePath, originalFilePath)
+        File.Delete newFilePath
 
   let getScript (args: ParseResults<ScriptArgs>) = Path.GetFullPath(args.GetResult Script)
 
