@@ -62,7 +62,7 @@ try
       |> Seq.map (fun f -> Path.Combine(sourceDir, f.Name), Path.Combine(targetDir, f.Name)) do
       File.Copy(sourcePath, targetPath, true)
 
-  let compileScript (args: ParseResults<ScriptArgs>) (filePath: string) =
+  let compileScript (args: ParseResults<ScriptArgs>) (originalFilePath: string) =
     let compilerOptions =
       { CompilerOptions.Default with
           IncludeHostEntryAssembly = false
@@ -90,7 +90,7 @@ try
         ()
 
         let fschDir =
-          Path.Combine(Path.GetTempPath(), ".fsch", File.ReadAllText filePath |> Hash.sha256 |> Hash.short)
+          Path.Combine(Path.GetTempPath(), ".fsch", File.ReadAllText originalFilePath |> Hash.sha256 |> Hash.short)
 
         if Directory.Exists fschDir then
           if verbose then
@@ -113,21 +113,21 @@ try
         | Some cacheDir -> { opts with OutputDir = cacheDir }
         | None -> opts
 
-    let scriptPath, shadowCopyWithExtension =
-      match filePath with
+    let newFilePath, movedWithExtension =
+      match originalFilePath with
       | path when path |> Path.HasExtension -> path, false
       | path ->
         let newPath =
           Path.ChangeExtension(path, $"""{Guid.NewGuid().ToString("n")[..10]}.fsx""")
 
-        File.Copy(path, newPath)
+        File.Move(path, newPath)
         newPath, true
 
     let beforeCompile = sw.ElapsedMilliseconds
 
     try
       let output =
-        CompilerHost.getAssembly options (Queil.FSharp.FscHost.File scriptPath)
+        CompilerHost.getAssembly options (Queil.FSharp.FscHost.File newFilePath)
         |> Async.RunSynchronously
 
       if verbose then
@@ -135,11 +135,11 @@ try
 
       output
     finally
-      if shadowCopyWithExtension then
+      if movedWithExtension then
         if verbose then
-          printfn $"Deleting shadowed file: {scriptPath}"
+          printfn $"Moving file: {newFilePath} -> {originalFilePath}"
 
-        File.Delete scriptPath
+        File.Move(newFilePath, originalFilePath)
 
   let getScript (args: ParseResults<ScriptArgs>) = Path.GetFullPath(args.GetResult Script)
 
