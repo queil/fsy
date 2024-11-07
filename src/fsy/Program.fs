@@ -27,22 +27,23 @@ module private Hash =
 
 let sw = Stopwatch.StartNew()
 
+
+let rawCmd = Environment.GetCommandLineArgs() |> Seq.toList |> (fun l -> l[1..])
+let indexOfDoubleDash = rawCmd |> List.tryFindIndex (fun f -> f = "--")
+
+let (fsyArgs, passThruArgs) =
+  match indexOfDoubleDash with
+  | Some idx ->
+    let fsyArgs, scriptArgs = rawCmd |> List.splitAt idx
+    fsyArgs, scriptArgs[1..]
+  | None -> rawCmd |> Seq.toList, []
+
+let parser = ArgumentParser.Create<Args>(errorHandler = ProcessExiter())
+
+let cmd = parser.Parse(fsyArgs |> Seq.toArray)
+let verbose = cmd.Contains Verbose
+
 try
-
-  let rawCmd = Environment.GetCommandLineArgs() |> Seq.toList |> (fun l -> l[1..])
-  let indexOfDoubleDash = rawCmd |> List.tryFindIndex (fun f -> f = "--")
-
-  let (fsyArgs, passThruArgs) =
-    match indexOfDoubleDash with
-    | Some idx ->
-      let fsyArgs, scriptArgs = rawCmd |> List.splitAt idx
-      fsyArgs, scriptArgs[1..]
-    | None -> rawCmd |> Seq.toList, []
-
-  let parser = ArgumentParser.Create<Args>()
-
-  let cmd = parser.Parse(fsyArgs |> Seq.toArray)
-  let verbose = cmd.Contains Verbose
 
   let installFsxExtensions () =
     let targetDir =
@@ -118,7 +119,7 @@ try
       | path when path |> Path.HasExtension -> path, false
       | path ->
         let newPath =
-          Path.Combine(Path.GetDirectoryName(path), $"""{ path |> File.ReadAllText |> Hash.sha256 |> Hash.short }.fsx""")
+          Path.Combine(Path.GetDirectoryName(path), $"""{path |> File.ReadAllText |> Hash.sha256 |> Hash.short}.fsx""")
 
         printfn $"Shadowing file %s{originalFilePath} to %s{newPath}"
         File.Copy(path, newPath)
@@ -188,7 +189,6 @@ try
   Environment.ExitCode <- 0
 
 with
-| :? Argu.ArguParseException as exn -> printfn "%s" exn.Message
 | :? ScriptCompileError as exn ->
   use _ =
     { new IDisposable with
@@ -202,11 +202,20 @@ with
         member _.Dispose() = Console.ResetColor() }
 
   Console.ForegroundColor <- ConsoleColor.Red
-  $"ERROR: {exn.Message}" |> System.Console.Error.WriteLine
+  let msg = if verbose then exn.ToString() else $"ERROR: {exn.Message}"
+  msg |> System.Console.Error.WriteLine
+
 | :? TargetInvocationException as exn ->
   use _ =
     { new IDisposable with
         member _.Dispose() = Console.ResetColor() }
 
   Console.ForegroundColor <- ConsoleColor.Red
-  $"ERROR: {exn.InnerException.Message}" |> System.Console.Error.WriteLine
+
+  let msg =
+    if verbose then
+      exn.ToString()
+    else
+      $"ERROR: {exn.InnerException.Message}"
+
+  msg |> System.Console.Error.WriteLine
