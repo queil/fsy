@@ -3,11 +3,20 @@
 #r "paket: github queil/yzl src/Yzl/Yzl.fs"
 #load @"queil/yzl/src/Yzl/Yzl.fs"
 
+#r "../bin/Debug/net9.0/Paket.Core.dll"
+
+
+open Paket.Core
+
 open Yzl
+
+
 
 let args = System.Environment.CommandLine
 
-printfn "%A" args
+printfn $"%s{args}"
+printfn $"%s{System.IO.Directory.GetCurrentDirectory()}" 
+
 
 let trees = Yzl.seq
 

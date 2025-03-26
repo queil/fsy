@@ -20,13 +20,13 @@
       },
       "Queil.FSharp.FscHost": {
         "type": "Direct",
-        "requested": "[0.40.0, )",
-        "resolved": "0.40.0",
-        "contentHash": "pMu8kbrSVfniY0hp1G5YgjIKVdDmZ+XNQWN3Uw6OFofyi/DGUZIipIsjGid054ap+ndPqi9kLRDFCLqNSi2jhQ==",
+        "requested": "[0.41.0, )",
+        "resolved": "0.41.0",
+        "contentHash": "TRmK/ByZhjgpUN1K/DnmOM4tnUaZhOyes6F8HEg/J3ChPQYga/VolS6Pma3SNlR2nZ8p8mBWdKM7ykz7sxh+bQ==",
         "dependencies": {
           "FSharp.Compiler.Service": "[43.8.401]",
           "FSharp.Core": "[8.0.401]",
-          "Queil.FSharp.DependencyManager.Paket": "0.40.0"
+          "Queil.FSharp.DependencyManager.Paket": "0.41.0"
         }
       },
       "Chessie": {
@@ -189,8 +189,8 @@
       },
       "Queil.FSharp.DependencyManager.Paket": {
         "type": "Transitive",
-        "resolved": "0.40.0",
-        "contentHash": "sY05LIZZfCqolj8ZAzHFpaG7ZanGWtYDK+YsZuSwAvkOvHWyRjHzWhOpMr8HJNCRBqt80UhI0iZx9Y3YZkNijA==",
+        "resolved": "0.41.0",
+        "contentHash": "hEXXtLXm5g6BeQzQF0VmeJTDgiKOaQs70iiS0aX4ZyOyrRhq/UH9e3i9g8aXfx9d59BvQNmsf5xjjZpi3StQDQ==",
         "dependencies": {
           "FSharp.Core": "[8.0.400]",
           "Paket.Core": "[9.0.2]"
@@ -999,13 +999,13 @@
       },
       "Queil.FSharp.FscHost": {
         "type": "Direct",
-        "requested": "[0.40.0, )",
-        "resolved": "0.40.0",
-        "contentHash": "pMu8kbrSVfniY0hp1G5YgjIKVdDmZ+XNQWN3Uw6OFofyi/DGUZIipIsjGid054ap+ndPqi9kLRDFCLqNSi2jhQ==",
+        "requested": "[0.41.0, )",
+        "resolved": "0.41.0",
+        "contentHash": "TRmK/ByZhjgpUN1K/DnmOM4tnUaZhOyes6F8HEg/J3ChPQYga/VolS6Pma3SNlR2nZ8p8mBWdKM7ykz7sxh+bQ==",
         "dependencies": {
           "FSharp.Compiler.Service": "[43.9.201]",
           "FSharp.Core": "[9.0.201]",
-          "Queil.FSharp.DependencyManager.Paket": "0.40.0"
+          "Queil.FSharp.DependencyManager.Paket": "0.41.0"
         }
       },
       "Chessie": {
@@ -1168,8 +1168,8 @@
       },
       "Queil.FSharp.DependencyManager.Paket": {
         "type": "Transitive",
-        "resolved": "0.40.0",
-        "contentHash": "sY05LIZZfCqolj8ZAzHFpaG7ZanGWtYDK+YsZuSwAvkOvHWyRjHzWhOpMr8HJNCRBqt80UhI0iZx9Y3YZkNijA==",
+        "resolved": "0.41.0",
+        "contentHash": "hEXXtLXm5g6BeQzQF0VmeJTDgiKOaQs70iiS0aX4ZyOyrRhq/UH9e3i9g8aXfx9d59BvQNmsf5xjjZpi3StQDQ==",
         "dependencies": {
           "FSharp.Core": "[9.0.201]",
           "Paket.Core": "[9.0.2]"
