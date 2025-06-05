@@ -15,7 +15,7 @@ open Yzl
 let args = System.Environment.CommandLine
 
 printfn $"%s{args}"
-printfn $"%s{System.IO.Directory.GetCurrentDirectory()}" 
+printfn $"%s{System.IO.Directory.GetCurrentDirectory()}"
 
 
 let trees = Yzl.seq
