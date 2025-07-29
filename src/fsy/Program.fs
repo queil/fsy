@@ -1,37 +1,20 @@
-open System.Security.Cryptography
-open System.Text
 open Argu
 open Queil.FSharp.FscHost
+open Queil.FSharp.Hashing
 open System.Text.Json
 open System.IO
 open Fsy.Cli
 open System
-open System.Diagnostics
 open System.Reflection
 open System.Runtime.Versioning
+open System.Diagnostics
 
 Environment.ExitCode <- 1
-
-[<RequireQualifiedAccess>]
-module private Hash =
-  let sha256 (s: string) =
-    use sha256 = SHA256.Create()
-
-    s
-    |> Encoding.UTF8.GetBytes
-    |> sha256.ComputeHash
-    |> BitConverter.ToString
-    |> _.Replace("-", "")
-
-  let short (s: string) = s[0..10].ToLowerInvariant()
-
-let sw = Stopwatch.StartNew()
-
 
 let rawCmd = Environment.GetCommandLineArgs() |> Seq.toList |> (fun l -> l[1..])
 let indexOfDoubleDash = rawCmd |> List.tryFindIndex (fun f -> f = "--")
 
-let (fsyArgs, passThruArgs) =
+let fsyArgs, passThruArgs =
   match indexOfDoubleDash with
   | Some idx ->
     let fsyArgs, scriptArgs = rawCmd |> List.splitAt idx
@@ -48,18 +31,19 @@ try
   let installFsxExtensions () =
     let targetDir =
       Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
+        Environment.GetFolderPath Environment.SpecialFolder.UserProfile,
         ".fsharp",
         "fsx-extensions",
         ".fsch"
       )
 
-    Directory.CreateDirectory(targetDir) |> ignore
+    Directory.CreateDirectory targetDir |> ignore
     let sourceDir = Path.GetDirectoryName(Assembly.GetEntryAssembly().Location)
 
-    for (sourcePath, targetPath) in
+    for sourcePath, targetPath in
       Directory.EnumerateFiles(sourceDir, "*.dll")
       |> Seq.map FileInfo
+      |> Seq.filter (fun f -> f.Name.StartsWith "FSharp." |> not)
       |> Seq.map (fun f -> Path.Combine(sourceDir, f.Name), Path.Combine(targetDir, f.Name)) do
       File.Copy(sourcePath, targetPath, true)
 
@@ -76,12 +60,12 @@ try
                 "--nowin32manifest"
                 yield! CompilerOptions.Default.Args scriptPath refs opts ] }
 
-    let cacheDirOverride = args.TryGetResult Cache_Dir |> Option.map (Path.GetFullPath)
+    let cacheDirOverride = args.TryGetResult Cache_Dir |> Option.map Path.GetFullPath
 
     if args.Contains Force then
 
       match cacheDirOverride with
-      | Some(cacheDir) ->
+      | Some cacheDir ->
         if Directory.Exists cacheDir then
           if verbose then
             printfn $"Deleting directory %s{cacheDir} recursively..."
@@ -102,11 +86,8 @@ try
     let options =
       { Options.Default with
           Compiler = compilerOptions
-          Logger =
-            if verbose then
-              fun msg -> printfn $"{sw.Elapsed}: {msg}"
-            else
-              ignore
+          Verbose = verbose
+          Logger = if verbose then Some(fun msg -> printfn $"{msg}") else None
           AutoLoadNugetReferences = cmd.Contains Run
           UseCache = true }
       |> fun opts ->
@@ -119,21 +100,21 @@ try
       | path when path |> Path.HasExtension -> path, false
       | path ->
         let newPath =
-          Path.Combine(Path.GetDirectoryName(path), $"""{path |> File.ReadAllText |> Hash.sha256 |> Hash.short}.fsx""")
+          Path.Combine(Path.GetDirectoryName path, $"""{path |> File.ReadAllText |> Hash.sha256 |> Hash.short}.fsx""")
 
         printfn $"Shadowing file %s{originalFilePath} to %s{newPath}"
         File.Copy(path, newPath)
         newPath, true
 
-    let beforeCompile = sw.ElapsedMilliseconds
-
     try
+      let sw = Stopwatch.StartNew()
+
       let output =
         CompilerHost.getAssembly options (Queil.FSharp.FscHost.File newFilePath)
         |> Async.RunSynchronously
 
       if verbose then
-        printfn $"fsch: {sw.ElapsedMilliseconds - beforeCompile} ms"
+        printfn $"fsch: {sw.ElapsedMilliseconds} ms"
 
       output
     finally
@@ -148,16 +129,13 @@ try
   let compile args =
     let script = args |> getScript
     let output = compileScript args script
-    let defaultOutDir = Path.GetFileNameWithoutExtension(script)
+    let defaultOutDir = Path.GetFileNameWithoutExtension script
     let outDir = args.GetResult(Output_Dir, $"./{defaultOutDir}")
-    Directory.CreateDirectory(outDir) |> ignore
+    Directory.CreateDirectory outDir |> ignore
     let outName = DirectoryInfo(outDir).Name
 
     let dotnetVersion =
-      Assembly
-        .GetEntryAssembly()
-        .GetCustomAttribute<TargetFrameworkAttribute>()
-        .FrameworkName
+      Assembly.GetEntryAssembly().GetCustomAttribute<TargetFrameworkAttribute>().FrameworkName
       |> fun s -> s.Split("=v")[1]
 
     let runtimeconfig =
@@ -195,7 +173,7 @@ with
         member _.Dispose() = Console.ResetColor() }
 
   Console.ForegroundColor <- ConsoleColor.Red
-  exn.Diagnostics |> Seq.iter (System.Console.Error.WriteLine)
+  exn.Diagnostics |> Seq.iter System.Console.Error.WriteLine
 | :? FileNotFoundException as exn ->
   use _ =
     { new IDisposable with
