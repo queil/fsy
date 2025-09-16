@@ -66,6 +66,7 @@ try
 
       match cacheDirOverride with
       | Some cacheDir ->
+        let cacheDir = Path.Combine(cacheDir, originalFilePath |> Hash.sha256 |> Hash.short)
         if Directory.Exists cacheDir then
           if verbose then
             printfn $"Deleting directory %s{cacheDir} recursively..."
@@ -75,7 +76,7 @@ try
         ()
 
         let fschDir =
-          Path.Combine(Path.GetTempPath(), ".fsch", File.ReadAllText originalFilePath |> Hash.sha256 |> Hash.short)
+          Path.Combine(Path.GetTempPath(), ".fsch", originalFilePath |> Hash.sha256 |> Hash.short)
 
         if Directory.Exists fschDir then
           if verbose then
