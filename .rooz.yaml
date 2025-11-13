@@ -1,4 +1,4 @@
-image: ghcr.io/queil/image:dotnet-8
+image: ghcr.io/queil/image:dotnet-10
 extra_repos:
 - git@github.com:queil/fsc-host
 shell: [ "zellij", "--layout", "fsharp" ]  
