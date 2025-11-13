@@ -18,6 +18,8 @@
     <PackageLicenseExpression>Unlicense</PackageLicenseExpression>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <NoWarn>NU1608</NoWarn>
+    <DisableImplicitNuGetFallbackFolder>true</DisableImplicitNuGetFallbackFolder>
+    <DisableImplicitLibraryPacksFolder>true</DisableImplicitLibraryPacksFolder>
   </PropertyGroup>
 
   <ItemGroup>
