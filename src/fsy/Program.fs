@@ -54,6 +54,7 @@ try
           Target = "exe"
           Standalone = false
           LangVersion = Some "preview"
+          Symbols = args.GetResults Symbol
           Args =
             fun scriptPath refs opts ->
               [ "--noframework"
