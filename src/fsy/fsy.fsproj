@@ -9,7 +9,7 @@
     <LangVersion>preview</LangVersion>
     <Authors>queil</Authors>
     <Description>F# scripts launcher</Description>
-    <Copyright>2023 - 2025 © queil</Copyright>
+    <Copyright>2023 - 2026 © queil</Copyright>
     <PublishRepositoryUrl>true</PublishRepositoryUrl>
     <RepositoryUrl>https://github.com/queil/fsy</RepositoryUrl>
     <FsDocsSourceRepository>https://github.com/queil/fsy/tree/main</FsDocsSourceRepository>
@@ -33,7 +33,7 @@
   </ItemGroup>
 
   <ItemGroup Condition=" '$(TargetFramework)' == 'net10.0' ">
-    <PackageReference Include="Queil.FSharp.FscHost" Version="0.46.0" />
+    <PackageReference Include="Queil.FSharp.FscHost" Version="0.46.1" />
     <PackageReference Update="FSharp.Core" Version="[10.0.102]" />
   </ItemGroup>
 

@@ -28,8 +28,10 @@ let verbose = cmd.Contains Verbose
 
 let useConsoleColor color =
   Console.ForegroundColor <- color
+
   { new IDisposable with
-        member _.Dispose() = Console.ResetColor() }
+      member _.Dispose() = Console.ResetColor() }
+
 try
 
   let installFsxExtensions () =
@@ -72,6 +74,7 @@ try
       match cacheDirOverride with
       | Some cacheDir ->
         let cacheDir = Path.Combine(cacheDir, originalFilePath |> Hash.sha256 |> Hash.short)
+
         if Directory.Exists cacheDir then
           if verbose then
             printfn $"Deleting directory %s{cacheDir} recursively..."
