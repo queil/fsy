@@ -32,14 +32,14 @@
       },
       "Queil.FSharp.FscHost": {
         "type": "Direct",
-        "requested": "[0.46.0-alpha.4, )",
-        "resolved": "0.46.0-alpha.4",
-        "contentHash": "aGE0KiQuQH6392aOtIWRdZjR29Ae3PWEPMeZBVUUv92GY+8ck0kYhJs8JdvFnnC5L/BDc4H920Eu/EG6jDylnA==",
+        "requested": "[0.46.0, )",
+        "resolved": "0.46.0",
+        "contentHash": "On+Snus4R9yLRQ4dffO2fFr+mH6DJcqOrKUmPFlobHlKTYuKjeKb1adOmfC1dWo5l7f6/YzgZHKoV38JFgeupw==",
         "dependencies": {
           "FSharp.Compiler.Service": "[43.10.102]",
           "FSharp.Core": "[10.0.102]",
-          "Queil.FSharp.DependencyManager.Paket": "0.46.0-alpha.4",
-          "Queil.FSharp.Hashing": "0.46.0-alpha.4"
+          "Queil.FSharp.DependencyManager.Paket": "0.46.0",
+          "Queil.FSharp.Hashing": "0.46.0"
         }
       },
       "Chessie": {
@@ -111,8 +111,8 @@
       },
       "Paket.Core": {
         "type": "Transitive",
-        "resolved": "10.0.0-alpha011",
-        "contentHash": "fZdz4Cwy/3+RPyPEf4LH+Nvd75aJrkqbVXlxE56kHGQwSKO8lfy5zklDDTJ+NN7XgWVOMWSPpHVwhXJIzm9cHw==",
+        "resolved": "10.3.1",
+        "contentHash": "Ze6aFN4hgz3q755Jd3PCYeRT4Srb903zEWYqiAZQRnCzqLP5DOdeFWo7creXoHN7hFssQbfRb9Movdpdn8o3mA==",
         "dependencies": {
           "Chessie": "0.6.0",
           "FSharp.Core": "9.0.101",
@@ -125,18 +125,18 @@
       },
       "Queil.FSharp.DependencyManager.Paket": {
         "type": "Transitive",
-        "resolved": "0.46.0-alpha.4",
-        "contentHash": "h4WScLZfiriV8ZECprv0sulGGWGd8fPStNi87PcNwBHDyWVDahKjTsFna9nlmcz5BPUJisyghGuxYUOw26ruHQ==",
+        "resolved": "0.46.0",
+        "contentHash": "Myc914mFfy6H5wcULbkdAI4zdrvPR5vya2kRpnGpDhdDhtNd+n66kBv3+BOIvIVRq68RtldLX02PENbRz6S+kw==",
         "dependencies": {
           "FSharp.Core": "[10.0.102]",
-          "Paket.Core": "[10.0.0-alpha011]",
-          "Queil.FSharp.Hashing": "0.46.0-alpha.4"
+          "Paket.Core": "[10.3.1]",
+          "Queil.FSharp.Hashing": "0.46.0"
         }
       },
       "Queil.FSharp.Hashing": {
         "type": "Transitive",
-        "resolved": "0.46.0-alpha.4",
-        "contentHash": "z16DbpW/bNObVwdA7YOp4yI2N1LsK8k190dmIhLmBTHQQcWOMyaaXzBP/nehicOm5xq11PzkP7bTb5CiSzDs2g==",
+        "resolved": "0.46.0",
+        "contentHash": "5Pp+NevA9edeXMCsZR8d1FM9RbXoh+3VgdoulTQ7CYErh4yA206/L3ld1rURWACHYLsJu+4tG1aEj15yP+jELA==",
         "dependencies": {
           "FSharp.Core": "[10.0.102]"
         }

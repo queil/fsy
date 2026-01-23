@@ -26,6 +26,10 @@ let parser = ArgumentParser.Create<Args>(errorHandler = ProcessExiter())
 let cmd = parser.Parse(fsyArgs |> Seq.toArray)
 let verbose = cmd.Contains Verbose
 
+let useConsoleColor color =
+  Console.ForegroundColor <- color
+  { new IDisposable with
+        member _.Dispose() = Console.ResetColor() }
 try
 
   let installFsxExtensions () =
@@ -169,28 +173,22 @@ try
   Environment.ExitCode <- 0
 
 with
-| :? ScriptCompileError as exn ->
-  use _ =
-    { new IDisposable with
-        member _.Dispose() = Console.ResetColor() }
-
-  Console.ForegroundColor <- ConsoleColor.Red
-  exn.Diagnostics |> Seq.iter System.Console.Error.WriteLine
-| :? FileNotFoundException as exn ->
-  use _ =
-    { new IDisposable with
-        member _.Dispose() = Console.ResetColor() }
-
-  Console.ForegroundColor <- ConsoleColor.Red
+| :? DirectoryNotFoundException as exn ->
+  use _ = useConsoleColor ConsoleColor.Red
   let msg = if verbose then exn.ToString() else $"ERROR: {exn.Message}"
   msg |> System.Console.Error.WriteLine
-
+| :? FileNotFoundException as exn ->
+  use _ = useConsoleColor ConsoleColor.Red
+  let msg = if verbose then exn.ToString() else $"ERROR: {exn.Message}"
+  msg |> System.Console.Error.WriteLine
+| :? ScriptCompileError as exn ->
+  use _ = useConsoleColor ConsoleColor.Red
+  exn.Diagnostics |> Seq.iter System.Console.Error.WriteLine
+| :? ScriptParseError as exn ->
+  use _ = useConsoleColor ConsoleColor.Red
+  exn.Diagnostics |> Seq.iter System.Console.Error.WriteLine
 | :? TargetInvocationException as exn ->
-  use _ =
-    { new IDisposable with
-        member _.Dispose() = Console.ResetColor() }
-
-  Console.ForegroundColor <- ConsoleColor.Red
+  use _ = useConsoleColor ConsoleColor.Red
 
   let msg =
     if verbose then
