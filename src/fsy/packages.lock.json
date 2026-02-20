@@ -14,9 +14,9 @@
       },
       "FSharp.Core": {
         "type": "Direct",
-        "requested": "[10.0.102, 10.0.102]",
-        "resolved": "10.0.102",
-        "contentHash": "umz5pbtOvL/F9U5sibhREzZT2ewAs//nRTMwj8XcOOjMdOP828tipLpEhb2fZNijhiyikJ6Nr/dsMc/lj58W9w=="
+        "requested": "[10.0.103, 10.0.103]",
+        "resolved": "10.0.103",
+        "contentHash": "GfQInb74eDh9JZ8wx4+t/lOrH1uRqZvneuViVJ8CwbQwmtyyZoeGuzRayL01MNAsm8B6eRenWwJThu01EFPeKg=="
       },
       "NuGet.Packaging": {
         "type": "Direct",
@@ -30,16 +30,16 @@
           "System.Security.Cryptography.Pkcs": "8.0.1"
         }
       },
-      "Queil.FSharp.FscHost": {
+      "Queil.Fsch": {
         "type": "Direct",
-        "requested": "[0.47.2, )",
-        "resolved": "0.47.2",
-        "contentHash": "NLYxCIZIsezpfJ4u0MO4HSRhc6BDZrkNeF55KqWEOsWxk6ZUPJrIE7m7/1HkcvlT1c6khSyuDDLCm9saLABuBg==",
+        "requested": "[0.48.0-alpha.1, )",
+        "resolved": "0.48.0-alpha.1",
+        "contentHash": "OpJvWqBp6/1VehXhs4KIzLaje6DGE/XU2YiMhEZVjLXUKYc4hPh0iz13n+vFMbf96tlYVysxP56rNMM+ax+RFw==",
         "dependencies": {
-          "FSharp.Compiler.Service": "[43.10.102]",
-          "FSharp.Core": "[10.0.102]",
-          "Queil.FSharp.DependencyManager.Paket": "0.47.2",
-          "Queil.FSharp.Hashing": "0.47.2"
+          "FSharp.Core": "[10.0.103]",
+          "Queil.FSharp.DependencyManager.FsxLib": "0.48.0-alpha.1",
+          "Queil.FSharp.DependencyManager.Paket": "0.48.0-alpha.1",
+          "Queil.FSharp.FscHost": "0.48.0-alpha.1"
         }
       },
       "Chessie": {
@@ -53,10 +53,10 @@
       },
       "FSharp.Compiler.Service": {
         "type": "Transitive",
-        "resolved": "43.10.102",
-        "contentHash": "akU57VniV8pkBP3O1ygRl5jFXbFOrjBvt1Vwe5AA+/DuTjDB72RsUnq2E/HJjioNMk5+HoTBv35tWDQ9cyBDIA==",
+        "resolved": "43.10.103",
+        "contentHash": "wZQN77Sg2qJef5pOO/GVGjvi2MO0Z4tUyo/YUj4kqDLaJklhPeOtitMI7c+bvV2lG/EnP7GrfnxEwkdxlClVnw==",
         "dependencies": {
-          "FSharp.Core": "[10.0.102]"
+          "FSharp.Core": "[10.0.103]"
         }
       },
       "Microsoft.NETCore.Platforms": {
@@ -123,22 +123,52 @@
           "System.Security.Cryptography.ProtectedData": "5.0.0"
         }
       },
+      "Queil.FSharp.DependencyManager.FsxLib": {
+        "type": "Transitive",
+        "resolved": "0.48.0-alpha.1",
+        "contentHash": "qFGyFrJaH1kddWVp+3U10FVS/uclKOMD8/I4YF+7ypLDs+XF76bLa3/RQ2mijqSq+jjP8/85L6urSBaYivsV/Q==",
+        "dependencies": {
+          "FSharp.Core": "[10.0.103]",
+          "Queil.FSharp.FscHost": "0.48.0-alpha.1",
+          "Queil.FSharp.Hashing": "0.48.0-alpha.1"
+        }
+      },
       "Queil.FSharp.DependencyManager.Paket": {
         "type": "Transitive",
-        "resolved": "0.47.2",
-        "contentHash": "ukBeUPc3TlFaQ/f0Q1VZmsF6f6xX/RgzK6UKE7XZHP6Ku6+3IMcmx7e2e2ho5k9qUfK48mr3qVkTdPZtZ3y9Ow==",
+        "resolved": "0.48.0-alpha.1",
+        "contentHash": "M2eD6tvgpqKctjrM5QAdY94aCOIn1ztcOcMHBwbkgyJ8TcAPEyspcNybtV63zcgcuTIG+7n9g+T5AiRuxeza7Q==",
         "dependencies": {
-          "FSharp.Core": "[10.0.102]",
+          "FSharp.Core": "[10.0.103]",
           "Paket.Core": "[10.3.1]",
-          "Queil.FSharp.Hashing": "0.47.2"
+          "Queil.FSharp.FscHost.Configuration": "0.48.0-alpha.1",
+          "Queil.FSharp.Hashing": "0.48.0-alpha.1"
+        }
+      },
+      "Queil.FSharp.FscHost": {
+        "type": "Transitive",
+        "resolved": "0.48.0-alpha.1",
+        "contentHash": "HPj7ROCrhvOo2w++FxMrYYMzQJoM5rGRbUOIY9EdPb8zYPHZp/Fimy8MLBIO2vkZyJrYKhJFeMfkKnI9FKeqyQ==",
+        "dependencies": {
+          "FSharp.Compiler.Service": "[43.10.103]",
+          "FSharp.Core": "[10.0.103]",
+          "Queil.FSharp.FscHost.Configuration": "0.48.0-alpha.1",
+          "Queil.FSharp.Hashing": "0.48.0-alpha.1"
+        }
+      },
+      "Queil.FSharp.FscHost.Configuration": {
+        "type": "Transitive",
+        "resolved": "0.48.0-alpha.1",
+        "contentHash": "jpxjSaHrRTpY5zuEHtEm5k2THJ7Kzm6V5GmFiNnz4WQN4dyrHTT9a3J5Av/E7TjebUBmcySQnyvlvP/EcPyGNQ==",
+        "dependencies": {
+          "FSharp.Core": "[10.0.103]"
         }
       },
       "Queil.FSharp.Hashing": {
         "type": "Transitive",
-        "resolved": "0.47.2",
-        "contentHash": "rucjxAud0s79EncJuuqL9SeJBAjWXJtnEjR1rq+zxVbzz31/TlLuddnOEz2IdprknD3vZL0W2WXU/3PwfuKhRQ==",
+        "resolved": "0.48.0-alpha.1",
+        "contentHash": "my57c+DpG4rZm8x2SpNu9d8YO3CxDQtB09Rvr/f9Fi0X1oW2nxNgejDVQkvMlF2p67PA7LNeBTo9JmLDNPDySA==",
         "dependencies": {
-          "FSharp.Core": "[10.0.102]"
+          "FSharp.Core": "[10.0.103]"
         }
       },
       "System.Configuration.ConfigurationManager": {
@@ -194,16 +224,16 @@
           "System.Security.Cryptography.Pkcs": "8.0.1"
         }
       },
-      "Queil.FSharp.FscHost": {
+      "Queil.Fsch": {
         "type": "Direct",
-        "requested": "[0.47.2, )",
-        "resolved": "0.47.2",
-        "contentHash": "NLYxCIZIsezpfJ4u0MO4HSRhc6BDZrkNeF55KqWEOsWxk6ZUPJrIE7m7/1HkcvlT1c6khSyuDDLCm9saLABuBg==",
+        "requested": "[0.48.0-alpha.1, )",
+        "resolved": "0.48.0-alpha.1",
+        "contentHash": "OpJvWqBp6/1VehXhs4KIzLaje6DGE/XU2YiMhEZVjLXUKYc4hPh0iz13n+vFMbf96tlYVysxP56rNMM+ax+RFw==",
         "dependencies": {
-          "FSharp.Compiler.Service": "[43.9.303]",
           "FSharp.Core": "[9.0.303]",
-          "Queil.FSharp.DependencyManager.Paket": "0.47.2",
-          "Queil.FSharp.Hashing": "0.47.2"
+          "Queil.FSharp.DependencyManager.FsxLib": "0.48.0-alpha.1",
+          "Queil.FSharp.DependencyManager.Paket": "0.48.0-alpha.1",
+          "Queil.FSharp.FscHost": "0.48.0-alpha.1"
         }
       },
       "Chessie": {
@@ -287,21 +317,51 @@
           "System.Security.Cryptography.ProtectedData": "5.0.0"
         }
       },
-      "Queil.FSharp.DependencyManager.Paket": {
+      "Queil.FSharp.DependencyManager.FsxLib": {
         "type": "Transitive",
-        "resolved": "0.47.2",
-        "contentHash": "ukBeUPc3TlFaQ/f0Q1VZmsF6f6xX/RgzK6UKE7XZHP6Ku6+3IMcmx7e2e2ho5k9qUfK48mr3qVkTdPZtZ3y9Ow==",
+        "resolved": "0.48.0-alpha.1",
+        "contentHash": "qFGyFrJaH1kddWVp+3U10FVS/uclKOMD8/I4YF+7ypLDs+XF76bLa3/RQ2mijqSq+jjP8/85L6urSBaYivsV/Q==",
         "dependencies": {
           "FSharp.Core": "[9.0.303]",
-          "NuGet.Packaging": "7.0.1",
+          "Queil.FSharp.FscHost": "0.48.0-alpha.1",
+          "Queil.FSharp.Hashing": "0.48.0-alpha.1"
+        }
+      },
+      "Queil.FSharp.DependencyManager.Paket": {
+        "type": "Transitive",
+        "resolved": "0.48.0-alpha.1",
+        "contentHash": "M2eD6tvgpqKctjrM5QAdY94aCOIn1ztcOcMHBwbkgyJ8TcAPEyspcNybtV63zcgcuTIG+7n9g+T5AiRuxeza7Q==",
+        "dependencies": {
+          "FSharp.Core": "[9.0.303]",
+          "NuGet.Packaging": "7.3.0",
           "Paket.Core": "[9.0.2]",
-          "Queil.FSharp.Hashing": "0.47.2"
+          "Queil.FSharp.FscHost.Configuration": "0.48.0-alpha.1",
+          "Queil.FSharp.Hashing": "0.48.0-alpha.1"
+        }
+      },
+      "Queil.FSharp.FscHost": {
+        "type": "Transitive",
+        "resolved": "0.48.0-alpha.1",
+        "contentHash": "HPj7ROCrhvOo2w++FxMrYYMzQJoM5rGRbUOIY9EdPb8zYPHZp/Fimy8MLBIO2vkZyJrYKhJFeMfkKnI9FKeqyQ==",
+        "dependencies": {
+          "FSharp.Compiler.Service": "[43.9.303]",
+          "FSharp.Core": "[9.0.303]",
+          "Queil.FSharp.FscHost.Configuration": "0.48.0-alpha.1",
+          "Queil.FSharp.Hashing": "0.48.0-alpha.1"
+        }
+      },
+      "Queil.FSharp.FscHost.Configuration": {
+        "type": "Transitive",
+        "resolved": "0.48.0-alpha.1",
+        "contentHash": "jpxjSaHrRTpY5zuEHtEm5k2THJ7Kzm6V5GmFiNnz4WQN4dyrHTT9a3J5Av/E7TjebUBmcySQnyvlvP/EcPyGNQ==",
+        "dependencies": {
+          "FSharp.Core": "[9.0.303]"
         }
       },
       "Queil.FSharp.Hashing": {
         "type": "Transitive",
-        "resolved": "0.47.2",
-        "contentHash": "rucjxAud0s79EncJuuqL9SeJBAjWXJtnEjR1rq+zxVbzz31/TlLuddnOEz2IdprknD3vZL0W2WXU/3PwfuKhRQ==",
+        "resolved": "0.48.0-alpha.1",
+        "contentHash": "my57c+DpG4rZm8x2SpNu9d8YO3CxDQtB09Rvr/f9Fi0X1oW2nxNgejDVQkvMlF2p67PA7LNeBTo9JmLDNPDySA==",
         "dependencies": {
           "FSharp.Core": "[9.0.303]"
         }
