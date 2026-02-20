@@ -179,17 +179,17 @@ with
 | :? DirectoryNotFoundException as exn ->
   use _ = useConsoleColor ConsoleColor.Red
   let msg = if verbose then exn.ToString() else $"ERROR: {exn.Message}"
-  msg |> System.Console.Error.WriteLine
+  msg |> Console.Error.WriteLine
 | :? FileNotFoundException as exn ->
   use _ = useConsoleColor ConsoleColor.Red
   let msg = if verbose then exn.ToString() else $"ERROR: {exn.Message}"
-  msg |> System.Console.Error.WriteLine
+  msg |> Console.Error.WriteLine
 | :? ScriptCompileError as exn ->
   use _ = useConsoleColor ConsoleColor.Red
-  exn.Diagnostics |> Seq.iter System.Console.Error.WriteLine
+  exn.Diagnostics |> Seq.iter Console.Error.WriteLine
 | :? ScriptParseError as exn ->
   use _ = useConsoleColor ConsoleColor.Red
-  exn.Diagnostics |> Seq.iter System.Console.Error.WriteLine
+  exn.Diagnostics |> Seq.iter Console.Error.WriteLine
 | :? TargetInvocationException as exn ->
   use _ = useConsoleColor ConsoleColor.Red
 
@@ -199,4 +199,4 @@ with
     else
       $"ERROR: {exn.InnerException.Message}"
 
-  msg |> System.Console.Error.WriteLine
+  msg |> Console.Error.WriteLine
