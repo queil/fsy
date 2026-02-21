@@ -7,6 +7,7 @@ type ScriptArgs =
   | [<AltCommandLine("-o"); Inherit>] Output_Dir of string
   | [<AltCommandLine("-f"); Inherit>] Force
   | [<AltCommandLine("-s"); Inherit>] Symbol of string
+  | [<AltCommandLine("-a"); Inherit>] ContentAddressableCache
   | [<Last; CliPrefix(CliPrefix.None); MainCommand>] Script of ``script.fsx``: string
 
   interface IArgParserTemplate with
@@ -16,6 +17,7 @@ type ScriptArgs =
       | Cache_Dir _ -> "Sets the cache directory. Default: ./.fsy"
       | Output_Dir _ -> "Output dir. Default: a new dir created in cwd (named after the input script file name)"
       | Force -> "Clears the cache and forces re-compilation"
+      | ContentAddressableCache -> "Use content-addressable cache"
       | Symbol _ ->
         "Allows defining symbols that can be used e.g. in #if directives. Use multiple times to define many symbols"
 

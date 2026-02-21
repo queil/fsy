@@ -98,7 +98,12 @@ try
           Verbose = verbose
           Logger = if verbose then Some(fun msg -> printfn $"{msg}") else None
           AutoLoadNugetReferences = cmd.Contains Run
-          UseCache = true }
+          UseCache = true
+          CacheIsolation =
+            if args.Contains ContentAddressableCache then
+              No
+            else
+              PerRootScript }
       |> fun opts ->
         match cacheDirOverride with
         | Some cacheDir -> { opts with OutputDir = cacheDir }
