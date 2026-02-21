@@ -71,26 +71,29 @@ try
 
     if args.Contains Force then
 
-      match cacheDirOverride with
-      | Some cacheDir ->
-        let cacheDir = Path.Combine(cacheDir, originalFilePath |> Hash.sha256 |> Hash.short)
+      let hashes = Hash.fileHash originalFilePath None
 
-        if Directory.Exists cacheDir then
-          if verbose then
-            printfn $"Deleting directory %s{cacheDir} recursively..."
+      let rootDir =
+        match cacheDirOverride with
+        | Some cacheRootDir ->
+          cacheRootDir
+        | None -> Path.Combine(Path.GetTempPath(), ".fsch")
+      
+      let cacheDir =
+        if args.Contains ContentAddressableCache then
+          hashes.ContentHashedScriptDir rootDir
+        else
+          hashes.HashedScriptDir rootDir
 
-          Directory.Delete(cacheDir, true)
-      | None ->
-        ()
+      printfn $"Attempting to delete cache: %s{cacheDir}"
 
-        let fschDir =
-          Path.Combine(Path.GetTempPath(), ".fsch", originalFilePath |> Hash.sha256 |> Hash.short)
+      if Directory.Exists cacheDir then
+        if verbose then
+          printfn $"Deleting directory %s{cacheDir} recursively..."
 
-        if Directory.Exists fschDir then
-          if verbose then
-            printfn $"Deleting directory %s{fschDir} recursively..."
-
-          Directory.Delete(fschDir, true)
+        Directory.Delete(cacheDir, true)
+      else
+        printfn $"Directory not found (skipping): %s{cacheDir}"
 
     let options =
       { Options.Default with
@@ -98,7 +101,12 @@ try
           Verbose = verbose
           Logger = if verbose then Some(fun msg -> printfn $"{msg}") else None
           AutoLoadNugetReferences = cmd.Contains Run
-          UseCache = true }
+          UseCache = true
+          CacheIsolation =
+            if args.Contains ContentAddressableCache then
+              No
+            else
+              PerRootScript }
       |> fun opts ->
         match cacheDirOverride with
         | Some cacheDir -> { opts with OutputDir = cacheDir }
@@ -179,17 +187,17 @@ with
 | :? DirectoryNotFoundException as exn ->
   use _ = useConsoleColor ConsoleColor.Red
   let msg = if verbose then exn.ToString() else $"ERROR: {exn.Message}"
-  msg |> System.Console.Error.WriteLine
+  msg |> Console.Error.WriteLine
 | :? FileNotFoundException as exn ->
   use _ = useConsoleColor ConsoleColor.Red
   let msg = if verbose then exn.ToString() else $"ERROR: {exn.Message}"
-  msg |> System.Console.Error.WriteLine
+  msg |> Console.Error.WriteLine
 | :? ScriptCompileError as exn ->
   use _ = useConsoleColor ConsoleColor.Red
-  exn.Diagnostics |> Seq.iter System.Console.Error.WriteLine
+  exn.Diagnostics |> Seq.iter Console.Error.WriteLine
 | :? ScriptParseError as exn ->
   use _ = useConsoleColor ConsoleColor.Red
-  exn.Diagnostics |> Seq.iter System.Console.Error.WriteLine
+  exn.Diagnostics |> Seq.iter Console.Error.WriteLine
 | :? TargetInvocationException as exn ->
   use _ = useConsoleColor ConsoleColor.Red
 
@@ -199,4 +207,4 @@ with
     else
       $"ERROR: {exn.InnerException.Message}"
 
-  msg |> System.Console.Error.WriteLine
+  msg |> Console.Error.WriteLine
