@@ -72,33 +72,31 @@ try
     if args.Contains Force then
 
       let hashes = Hash.fileHash originalFilePath None
-      
+
       let cachePath =
         let rootDir = Path.GetDirectoryName(originalFilePath)
+
         if args.Contains ContentAddressableCache then
           hashes.ContentHashedScriptDir rootDir
-        else hashes.HashedScriptDir rootDir
-       
-      match cacheDirOverride with
-      | Some cacheRootDir ->
-        let cacheDir = Path.Combine(cacheRootDir, cachePath)
+        else
+          hashes.HashedScriptDir rootDir
 
-        if Directory.Exists cacheDir then
-          if verbose then
-            printfn $"Deleting directory %s{cacheDir} recursively..."
+      let cacheDir =
+        match cacheDirOverride with
+        | Some cacheRootDir ->
 
-          Directory.Delete(cacheDir, true)
-      | None ->
-        ()
+          Path.Combine(cacheRootDir, cachePath)
+        | None -> Path.Combine(Path.GetTempPath(), ".fsch", cachePath)
 
-        let fschDir =
-          Path.Combine(Path.GetTempPath(), ".fsch", cachePath)
+      printfn $"Attempting to delete cache: %s{cacheDir}"
 
-        if Directory.Exists fschDir then
-          if verbose then
-            printfn $"Deleting directory %s{fschDir} recursively..."
+      if Directory.Exists cacheDir then
+        if verbose then
+          printfn $"Deleting directory %s{cacheDir} recursively..."
 
-          Directory.Delete(fschDir, true)
+        Directory.Delete(cacheDir, true)
+      else
+        printfn $"Directory not found (skipping): %s{cacheDir}"
 
     let options =
       { Options.Default with
