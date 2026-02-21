@@ -71,9 +71,17 @@ try
 
     if args.Contains Force then
 
+      let hashes = Hash.fileHash originalFilePath None
+      
+      let cachePath =
+        let rootDir = Path.GetDirectoryName(originalFilePath)
+        if args.Contains ContentAddressableCache then
+          hashes.ContentHashedScriptDir rootDir
+        else hashes.HashedScriptDir rootDir
+       
       match cacheDirOverride with
-      | Some cacheDir ->
-        let cacheDir = Path.Combine(cacheDir, originalFilePath |> Hash.sha256 |> Hash.short)
+      | Some cacheRootDir ->
+        let cacheDir = Path.Combine(cacheRootDir, cachePath)
 
         if Directory.Exists cacheDir then
           if verbose then
@@ -84,7 +92,7 @@ try
         ()
 
         let fschDir =
-          Path.Combine(Path.GetTempPath(), ".fsch", originalFilePath |> Hash.sha256 |> Hash.short)
+          Path.Combine(Path.GetTempPath(), ".fsch", cachePath)
 
         if Directory.Exists fschDir then
           if verbose then
