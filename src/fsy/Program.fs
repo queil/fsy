@@ -73,20 +73,17 @@ try
 
       let hashes = Hash.fileHash originalFilePath None
 
-      let cachePath =
-        let rootDir = Path.GetDirectoryName(originalFilePath)
-
+      let rootDir =
+        match cacheDirOverride with
+        | Some cacheRootDir ->
+          cacheRootDir
+        | None -> Path.Combine(Path.GetTempPath(), ".fsch")
+      
+      let cacheDir =
         if args.Contains ContentAddressableCache then
           hashes.ContentHashedScriptDir rootDir
         else
           hashes.HashedScriptDir rootDir
-
-      let cacheDir =
-        match cacheDirOverride with
-        | Some cacheRootDir ->
-
-          Path.Combine(cacheRootDir, cachePath)
-        | None -> Path.Combine(Path.GetTempPath(), ".fsch", cachePath)
 
       printfn $"Attempting to delete cache: %s{cacheDir}"
 
