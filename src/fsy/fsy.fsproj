@@ -30,7 +30,7 @@
   <ItemGroup>
     <PackageReference Include="Argu" Version="6.*" />
     <PackageReference Include="NuGet.Packaging" Version="7.*" />
-    <PackageReference Include="Queil.FSharp.FscHost" Version="0.50.0" />
+    <PackageReference Include="Queil.FSharp.FscHost" Version="0.51.0" />
   </ItemGroup>
 
   <ItemGroup Condition=" '$(TargetFramework)' == 'net9.0' ">
@@ -38,7 +38,7 @@
   </ItemGroup>
 
   <ItemGroup Condition=" '$(TargetFramework)' == 'net10.0' ">
-    <PackageReference Update="FSharp.Core" Version="[10.1.202]" />
+    <PackageReference Update="FSharp.Core" Version="[10.0.203]" />
   </ItemGroup>
 
 </Project>
