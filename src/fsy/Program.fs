@@ -34,13 +34,16 @@ let useConsoleColor color =
 
 try
 
-  let installFsxExtensions () =
+  let installFsxExtensions (path: string option) =
     let targetDir =
-      Path.Combine(
-        Environment.GetFolderPath Environment.SpecialFolder.UserProfile,
-        ".fsharp",
-        "fsx-extensions",
-        ".fsch"
+      path
+      |> Option.defaultValue (
+        Path.Combine(
+          Environment.GetFolderPath Environment.SpecialFolder.UserProfile,
+          ".fsharp",
+          "fsx-extensions",
+          ".fsch"
+        )
       )
 
     Directory.CreateDirectory targetDir |> ignore
@@ -52,6 +55,7 @@ try
       |> Seq.filter (fun f -> f.Name.StartsWith "FSharp." |> not)
       |> Seq.map (fun f -> Path.Combine(sourceDir, f.Name), Path.Combine(targetDir, f.Name)) do
       File.Copy(sourcePath, targetPath, true)
+    printfn $"Installed files at: %s{targetDir}"
 
   let compileScript (args: ParseResults<ScriptArgs>) (originalFilePath: string) =
     let compilerOptions =
@@ -163,14 +167,14 @@ try
 
   match cmd.GetSubCommand() with
   | Run args ->
-    let script = args |> getScript
-    let output = compileScript args script
+    let scriptFullPath = args |> getScript
+    let output = compileScript args scriptFullPath    
     output.Assembly.Value.EntryPoint.Invoke(null, Array.empty) |> ignore
     ()
   | Compile args ->
     compile args |> ignore
     ()
-  | Install_Fsx_Extensions -> installFsxExtensions ()
+  | Install_Fsx_Extensions args -> installFsxExtensions (args.TryGetResult TargetDir)
   | _ -> ()
 
   Environment.ExitCode <- 0
@@ -179,17 +183,17 @@ with
 | :? DirectoryNotFoundException as exn ->
   use _ = useConsoleColor ConsoleColor.Red
   let msg = if verbose then exn.ToString() else $"ERROR: {exn.Message}"
-  msg |> System.Console.Error.WriteLine
+  msg |> Console.Error.WriteLine
 | :? FileNotFoundException as exn ->
   use _ = useConsoleColor ConsoleColor.Red
   let msg = if verbose then exn.ToString() else $"ERROR: {exn.Message}"
-  msg |> System.Console.Error.WriteLine
+  msg |> Console.Error.WriteLine
 | :? ScriptCompileError as exn ->
   use _ = useConsoleColor ConsoleColor.Red
-  exn.Diagnostics |> Seq.iter System.Console.Error.WriteLine
+  exn.Diagnostics |> Seq.iter Console.Error.WriteLine
 | :? ScriptParseError as exn ->
   use _ = useConsoleColor ConsoleColor.Red
-  exn.Diagnostics |> Seq.iter System.Console.Error.WriteLine
+  exn.Diagnostics |> Seq.iter Console.Error.WriteLine
 | :? TargetInvocationException as exn ->
   use _ = useConsoleColor ConsoleColor.Red
 
@@ -199,4 +203,4 @@ with
     else
       $"ERROR: {exn.InnerException.Message}"
 
-  msg |> System.Console.Error.WriteLine
+  msg |> Console.Error.WriteLine

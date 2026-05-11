@@ -19,9 +19,18 @@ type ScriptArgs =
       | Symbol _ ->
         "Allows defining symbols that can be used e.g. in #if directives. Use multiple times to define many symbols"
 
+type InstallFsxExtensionsArgs =
+  | [<AltCommandLine("-t"); Inherit>] TargetDir of string
+
+  interface IArgParserTemplate with
+    member this.Usage =
+      match this with
+      | TargetDir _ -> "Installation path. Default: ~/.fsharp/fsx-extensions/.fsch"
+
 type Args =
   | [<AltCommandLine("-v"); Inherit>] Verbose
-  | [<CliPrefix(CliPrefix.None); SubCommand; AltCommandLine("ifsx")>] Install_Fsx_Extensions
+  | [<CliPrefix(CliPrefix.None); AltCommandLine("ifsx")>] Install_Fsx_Extensions of
+    ParseResults<InstallFsxExtensionsArgs>
   | [<CliPrefix(CliPrefix.None)>] Run of ParseResults<ScriptArgs>
   | [<CliPrefix(CliPrefix.None)>] Compile of ParseResults<ScriptArgs>
 
@@ -30,7 +39,7 @@ type Args =
       match this with
       | Run _ -> "Runs the script in-process"
       | Compile _ -> "Compiles the script"
-      | Install_Fsx_Extensions ->
+      | Install_Fsx_Extensions _ ->
         "Copies the dlls required for editor support to a stable location: ~/.fsharp/fsx-extensions/.fsch"
       | Verbose -> "Shows some log messages"
 
