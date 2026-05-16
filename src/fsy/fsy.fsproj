@@ -29,7 +29,7 @@
 
   <ItemGroup>
     <PackageReference Include="Argu" Version="6.*" />
-    <PackageReference Include="Queil.FSharp.FscHost" Version="0.52.0" />
+    <PackageReference Include="Queil.FSharp.FscHost" Version="0.53.0" />
   </ItemGroup>
 
   <ItemGroup Condition=" '$(TargetFramework)' == 'net9.0' ">
