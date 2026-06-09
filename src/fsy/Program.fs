@@ -1,15 +1,22 @@
 open Argu
 open Queil.FSharp.FscHost
 open Queil.FSharp.Hashing
-open System.Text.Json
 open System.IO
 open Fsy.Cli
 open System
 open System.Reflection
-open System.Runtime.Versioning
 open System.Diagnostics
 
 Environment.ExitCode <- 1
+
+let version, sha =
+  let chunks =
+    Assembly
+      .GetExecutingAssembly()
+      .GetCustomAttribute<AssemblyInformationalVersionAttribute>()
+      .InformationalVersion.Split("+")
+
+  chunks[0], chunks[1]
 
 let rawCmd = Environment.GetCommandLineArgs() |> Seq.toList |> (fun l -> l[1..])
 let indexOfDoubleDash = rawCmd |> List.tryFindIndex (fun f -> f = "--")
@@ -22,7 +29,6 @@ let fsyArgs, passThruArgs =
   | None -> rawCmd |> Seq.toList, []
 
 let parser = ArgumentParser.Create<Args>(errorHandler = ProcessExiter())
-
 let cmd = parser.Parse(fsyArgs |> Seq.toArray)
 let verbose = cmd.Contains Verbose
 
@@ -55,6 +61,7 @@ try
       |> Seq.filter (fun f -> f.Name.StartsWith "FSharp." |> not)
       |> Seq.map (fun f -> Path.Combine(sourceDir, f.Name), Path.Combine(targetDir, f.Name)) do
       File.Copy(sourcePath, targetPath, true)
+
     printfn $"Installed files at: %s{targetDir}"
 
   let compileScript (args: ParseResults<ScriptArgs>) (originalFilePath: string) =
@@ -71,30 +78,23 @@ try
                 "--nowin32manifest"
                 yield! CompilerOptions.Default.Args scriptPath refs opts ] }
 
-    let cacheDirOverride = args.TryGetResult Cache_Dir |> Option.map Path.GetFullPath
+    let cacheDirRoot =
+      args.TryGetResult Cache_Dir
+      |> Option.orElseWith (fun () -> Environment.GetEnvironmentVariable "FSY_CACHE_DIR" |> Option.ofObj)
+      |> Option.defaultValue (Path.GetTempPath())
+      |> fun p -> Path.Combine(p, ".fsy", $"%s{version}+%s{sha[..7]}")
+      |> Path.GetFullPath
 
     if args.Contains Force then
 
-      match cacheDirOverride with
-      | Some cacheDir ->
-        let cacheDir = Path.Combine(cacheDir, originalFilePath |> Hash.sha256 |> Hash.short)
+      let cacheDir =
+        Path.Combine(cacheDirRoot, originalFilePath |> Hash.sha256 |> Hash.short)
 
-        if Directory.Exists cacheDir then
-          if verbose then
-            printfn $"Deleting directory %s{cacheDir} recursively..."
+      if Directory.Exists cacheDir then
+        if verbose then
+          printfn $"Deleting directory %s{cacheDir} recursively..."
 
-          Directory.Delete(cacheDir, true)
-      | None ->
-        ()
-
-        let fschDir =
-          Path.Combine(Path.GetTempPath(), ".fsch", originalFilePath |> Hash.sha256 |> Hash.short)
-
-        if Directory.Exists fschDir then
-          if verbose then
-            printfn $"Deleting directory %s{fschDir} recursively..."
-
-          Directory.Delete(fschDir, true)
+        Directory.Delete(cacheDir, true)
 
     let options =
       { Options.Default with
@@ -103,17 +103,20 @@ try
           Logger = if verbose then Some(fun msg -> printfn $"{msg}") else None
           AutoLoadNugetReferences = cmd.Contains Run
           UseCache = true }
-      |> fun opts ->
-        match cacheDirOverride with
-        | Some cacheDir -> { opts with OutputDir = cacheDir }
-        | None -> opts
+      |> fun opts -> { opts with OutputDir = cacheDirRoot }
 
     let newFilePath, movedWithExtension =
       match originalFilePath with
       | path when path |> Path.HasExtension -> path, false
       | path ->
         let newPath =
-          Path.Combine(Path.GetDirectoryName path, $"""{path |> File.ReadAllText |> Hash.sha256 |> Hash.short}.fsx""")
+          let scriptDir =
+            args.TryGetResult Shadow_Dir
+            |> Option.orElseWith (fun () -> Environment.GetEnvironmentVariable "FSY_SHADOW_DIR" |> Option.ofObj)
+            |> Option.map (Directory.CreateDirectory >> _.FullName)
+            |> Option.defaultValue (Path.GetDirectoryName path)
+
+          Path.Combine(scriptDir, $"""{path |> File.ReadAllText |> Hash.sha256 |> Hash.short}.fsx""")
 
         printfn $"Shadowing file %s{originalFilePath} to %s{newPath}"
         File.Copy(path, newPath)
@@ -139,41 +142,12 @@ try
 
   let getScript (args: ParseResults<ScriptArgs>) = Path.GetFullPath(args.GetResult Script)
 
-  let compile args =
-    let script = args |> getScript
-    let output = compileScript args script
-    let defaultOutDir = Path.GetFileNameWithoutExtension script
-    let outDir = args.GetResult(Output_Dir, $"./{defaultOutDir}")
-    Directory.CreateDirectory outDir |> ignore
-    let outName = DirectoryInfo(outDir).Name
-
-    let dotnetVersion =
-      Assembly.GetEntryAssembly().GetCustomAttribute<TargetFrameworkAttribute>().FrameworkName
-      |> fun s -> s.Split("=v")[1]
-
-    let runtimeconfig =
-      JsonSerializer.Serialize
-        {| runtimeOptions =
-            {| tfm = $"net{dotnetVersion}"
-               framework =
-                {| name = "Microsoft.NETCore.App"
-                   version = $"{dotnetVersion}.0" |} |} |}
-
-    let rtConfigPath = $"{Path.Combine(outDir, outName)}.runtimeconfig.json"
-    File.WriteAllText(rtConfigPath, runtimeconfig)
-    let outputFile = $"{Path.Combine(outDir, outName)}.dll"
-    File.Copy(output.AssemblyFilePath, outputFile, true)
-    outputFile
-
   match cmd.GetSubCommand() with
   | Run args ->
     let scriptFullPath = args |> getScript
-    let output = compileScript args scriptFullPath    
+    let output = compileScript args scriptFullPath
     output.Assembly.Value.EntryPoint.Invoke(null, Array.empty) |> ignore
-    ()
-  | Compile args ->
-    compile args |> ignore
-    ()
+  | Version -> printfn $"fsy %s{version}+%s{sha}"
   | Install_Fsx_Extensions args -> installFsxExtensions (args.TryGetResult TargetDir)
   | _ -> ()
 
