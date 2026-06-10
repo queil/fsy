@@ -30,7 +30,12 @@ let fsyArgs, passThruArgs =
 
 let parser = ArgumentParser.Create<Args>(errorHandler = ProcessExiter())
 let cmd = parser.Parse(fsyArgs |> Seq.toArray)
-let verbose = cmd.Contains Verbose
+
+let verbose =
+  cmd.Contains Verbose
+  || Environment.GetEnvironmentVariable "FSY_VERBOSE"
+     |> Option.ofObj
+     |> Option.contains "1"
 
 let useConsoleColor color =
   Console.ForegroundColor <- color
@@ -85,7 +90,12 @@ try
       |> fun p -> Path.Combine(p, ".fsy", $"%s{version}+%s{sha[..7]}")
       |> Path.GetFullPath
 
-    if args.Contains Force then
+    if
+      args.Contains No_Cache
+      || Environment.GetEnvironmentVariable "FSY_NO_CACHE"
+         |> Option.ofObj
+         |> Option.contains "1"
+    then
 
       let cacheDir =
         Path.Combine(cacheDirRoot, originalFilePath |> Hash.sha256 |> Hash.short)

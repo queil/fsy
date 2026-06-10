@@ -30,8 +30,7 @@ steps:
   inputs:
     command: 'pack'
     packagesToPack: 'src/**/*.fsproj'
-    versioningScheme: 'byEnvVar'
-    versionEnvVar: PKGVER
+    buildProperties: 'Version=$(pkgver)'
     verbosityPack: 'Normal'
   condition: and(succeeded(), startsWith(variables['Build.SourceBranch'], 'refs/tags/'))
 

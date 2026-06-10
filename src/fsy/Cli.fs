@@ -5,7 +5,7 @@ open Argu
 type ScriptArgs =
   | [<AltCommandLine("-c"); Inherit>] Cache_Dir of string
   | [<Inherit>] Shadow_Dir of string
-  | [<AltCommandLine("-f"); Inherit>] Force
+  | [<AltCommandLine("-f"); Inherit>] No_Cache
   | [<AltCommandLine("-s"); Inherit>] Symbol of string
   | [<Last; CliPrefix(CliPrefix.None); MainCommand>] Script of ``script.fsx``: string
 
@@ -14,7 +14,7 @@ type ScriptArgs =
       match this with
       | Script _ -> "Path of the F# script to run/compile"
       | Cache_Dir _ -> "Sets the cache directory. Default: ./.fsy"
-      | Force -> "Clears the cache and forces re-compilation"
+      | No_Cache -> "Clears the cache and forces re-compilation"
       | Symbol _ ->
         "Allows defining symbols that can be used e.g. in #if directives. Use multiple times to define many symbols"
       | Shadow_Dir _ -> "Script shadow root dir. Default: cwd"
