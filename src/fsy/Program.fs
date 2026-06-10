@@ -90,22 +90,6 @@ try
       |> fun p -> Path.Combine(p, ".fsy", $"%s{version}+%s{sha[..7]}")
       |> Path.GetFullPath
 
-    if
-      args.Contains No_Cache
-      || Environment.GetEnvironmentVariable "FSY_NO_CACHE"
-         |> Option.ofObj
-         |> Option.contains "1"
-    then
-
-      let cacheDir =
-        Path.Combine(cacheDirRoot, originalFilePath |> Hash.sha256 |> Hash.short)
-
-      if Directory.Exists cacheDir then
-        if verbose then
-          printfn $"Deleting directory %s{cacheDir} recursively..."
-
-        Directory.Delete(cacheDir, true)
-
     let options =
       { Options.Default with
           Compiler = compilerOptions
@@ -132,6 +116,22 @@ try
         File.Copy(path, newPath)
         newPath, true
 
+    if
+      args.Contains No_Cache
+      || Environment.GetEnvironmentVariable "FSY_NO_CACHE"
+         |> Option.ofObj
+         |> Option.contains "1"
+    then
+
+      let cacheDir =
+        Path.Combine(cacheDirRoot, newFilePath |> Hash.sha256 |> Hash.short)
+
+      if Directory.Exists cacheDir then
+        if verbose then
+          printfn $"Deleting directory %s{cacheDir} recursively..."
+
+        Directory.Delete(cacheDir, true)
+    
     try
       let sw = Stopwatch.StartNew()
 
