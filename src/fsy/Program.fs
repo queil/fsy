@@ -91,6 +91,8 @@ try
       | Some f -> locateTfm f
       | _ -> entryDir
 
+    printfn $"Copying from: %s{sourceDir}"
+    
     for sourcePath, targetPath in
       Directory.EnumerateFiles(sourceDir, "*.dll")
       |> Seq.map FileInfo
