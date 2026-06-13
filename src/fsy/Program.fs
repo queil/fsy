@@ -74,7 +74,7 @@ try
         eprintfn $"WARN: Could not locate tool tfm: %s{requested}. Falling back to: %s{entryDir}"
         entryDir
       | Some toolsDir ->
-        let dir = Path.Combine(toolsDir, requested, "any")
+        let dir = Path.Combine(toolsDir, requested)
 
         if Directory.Exists dir then
           dir
@@ -92,7 +92,7 @@ try
       | _ -> entryDir
 
     printfn $"Copying from: %s{sourceDir}"
-
+    
     for sourcePath, targetPath in
       Directory.EnumerateFiles(sourceDir, "*.dll")
       |> Seq.map FileInfo
