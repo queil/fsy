@@ -5,7 +5,7 @@ open Argu
 type ScriptArgs =
   | [<AltCommandLine("-c"); Inherit>] Cache_Dir of string
   | [<Inherit>] Shadow_Dir of string
-  | [<AltCommandLine("-f"); Inherit>] No_Cache
+  | [<Inherit>] No_Cache
   | [<AltCommandLine("-s"); Inherit>] Symbol of string
   | [<Last; CliPrefix(CliPrefix.None); MainCommand>] Script of ``script.fsx``: string
 
@@ -19,13 +19,20 @@ type ScriptArgs =
         "Allows defining symbols that can be used e.g. in #if directives. Use multiple times to define many symbols"
       | Shadow_Dir _ -> "Script shadow root dir. Default: cwd"
 
+
 type InstallFsxExtensionsArgs =
-  | [<AltCommandLine("-t"); Inherit>] TargetDir of string
+  | [<AltCommandLine("-t"); Inherit>] Target_Dir of string
+  | [<AltCommandLine("-f"); Inherit>] Framework_Version of FrameworkVersion
 
   interface IArgParserTemplate with
     member this.Usage =
       match this with
-      | TargetDir _ -> "Installation path. Default: ~/.fsharp/fsx-extensions/.fsch"
+      | Target_Dir _ -> "Installation path. Default: ~/.fsharp/fsx-extensions/.fsch"
+      | Framework_Version _ -> "Framework version. Default: net10"
+
+and FrameworkVersion =
+  | Net10
+  | Net9
 
 type Args =
   | [<AltCommandLine("-v"); Inherit>] Verbose
