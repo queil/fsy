@@ -45,7 +45,7 @@ let useConsoleColor color =
 
 try
 
-  let installFsxExtensions (path: string option) =
+  let installFsxExtensions (path: string option) (framework: string option) =
     let targetDir =
       path
       |> Option.defaultValue (
@@ -58,16 +58,48 @@ try
       )
 
     Directory.CreateDirectory targetDir |> ignore
-    let sourceDir = Path.GetDirectoryName(Assembly.GetEntryAssembly().Location)
+
+    let entryDir = Path.GetDirectoryName(Assembly.GetEntryAssembly().Location)
+
+    let rec findToolsDir (dir: string) =
+      let parent = Directory.GetParent(dir)
+
+      if isNull parent then None
+      elif parent.Name = "tools" then Some parent.FullName
+      else findToolsDir parent.FullName
+
+    let locateTfm (requested: string) =
+      match findToolsDir entryDir with
+      | None ->
+        eprintfn $"WARN: Could not locate tool tfm: %s{requested}. Falling back to: %s{entryDir}"
+        entryDir
+      | Some toolsDir ->
+        let dir = Path.Combine(toolsDir, requested)
+
+        if Directory.Exists dir then
+          dir
+        else
+          failwithf
+            "tfm %s not packaged; have: %s"
+            requested
+            (Directory.GetDirectories toolsDir
+             |> Array.map Path.GetFileName
+             |> String.concat ", ")
+
+    let sourceDir =
+      match framework with
+      | Some f -> locateTfm f
+      | _ -> entryDir
 
     for sourcePath, targetPath in
       Directory.EnumerateFiles(sourceDir, "*.dll")
       |> Seq.map FileInfo
       |> Seq.filter (fun f -> f.Name.StartsWith "FSharp." |> not)
       |> Seq.map (fun f -> Path.Combine(sourceDir, f.Name), Path.Combine(targetDir, f.Name)) do
+      eprintfn $"Copy: %s{sourcePath} -> %s{targetPath}"
       File.Copy(sourcePath, targetPath, true)
 
-    printfn $"Installed files at: %s{targetDir}"
+    printfn "Done"
 
   let compileScript (args: ParseResults<ScriptArgs>) (originalFilePath: string) =
     let compilerOptions =
@@ -123,15 +155,14 @@ try
          |> Option.contains "1"
     then
 
-      let cacheDir =
-        Path.Combine(cacheDirRoot, newFilePath |> Hash.sha256 |> Hash.short)
+      let cacheDir = Path.Combine(cacheDirRoot, newFilePath |> Hash.sha256 |> Hash.short)
 
       if Directory.Exists cacheDir then
         if verbose then
           printfn $"Deleting directory %s{cacheDir} recursively..."
 
         Directory.Delete(cacheDir, true)
-    
+
     try
       let sw = Stopwatch.StartNew()
 
@@ -158,7 +189,13 @@ try
     let output = compileScript args scriptFullPath
     output.Assembly.Value.EntryPoint.Invoke(null, Array.empty) |> ignore
   | Version -> printfn $"fsy %s{version}+%s{sha}"
-  | Install_Fsx_Extensions args -> installFsxExtensions (args.TryGetResult TargetDir)
+  | Install_Fsx_Extensions args ->
+
+    installFsxExtensions
+      (args.TryGetResult Target_Dir)
+      (match args.TryGetResult Framework_Version with
+       | Some Net9 -> Some "net9.0"
+       | _ -> None)
   | _ -> ()
 
   Environment.ExitCode <- 0
