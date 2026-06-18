@@ -103,7 +103,7 @@ try
 
     printfn "Done"
 
-  let compileScript (args: ParseResults<ScriptArgs>) (originalFilePath: string) =
+  let runScript (args: ParseResults<ScriptArgs>) (originalFilePath: string) =
     let compilerOptions =
       { CompilerOptions.Default with
           IncludeHostEntryAssembly = false
@@ -175,7 +175,7 @@ try
       if verbose then
         printfn $"fsch: {sw.ElapsedMilliseconds} ms"
 
-      output
+      output.Assembly.Value.EntryPoint.Invoke(null, Array.empty) |> ignore
     finally
       if movedWithExtension then
         if verbose then
@@ -188,8 +188,8 @@ try
   match cmd.GetSubCommand() with
   | Run args ->
     let scriptFullPath = args |> getScript
-    let output = compileScript args scriptFullPath
-    output.Assembly.Value.EntryPoint.Invoke(null, Array.empty) |> ignore
+    runScript args scriptFullPath
+
   | Version -> printfn $"fsy %s{version}+%s{sha}"
   | Install_Fsx_Extensions args ->
 
