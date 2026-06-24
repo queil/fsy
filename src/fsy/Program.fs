@@ -6,6 +6,7 @@ open Fsy.Cli
 open System
 open System.Reflection
 open System.Diagnostics
+open System.Runtime.InteropServices
 
 Environment.ExitCode <- 1
 
@@ -42,6 +43,81 @@ let useConsoleColor color =
 
   { new IDisposable with
       member _.Dispose() = Console.ResetColor() }
+
+let acquireRestoreLock (lockDir: string) (timeout: TimeSpan) (log: string -> unit) : Async<IDisposable> =
+  Directory.CreateDirectory lockDir |> ignore
+  let lockFilePath = Path.Combine(lockDir, ".fsy-restore.lock")
+  let sw = Stopwatch.StartNew()
+  let staleAfter = timeout + TimeSpan.FromMinutes 1.0
+  let mutable stream = None
+
+  let deleteLock () =
+    try
+      File.Delete lockFilePath
+    with :? IOException ->
+      ()
+
+  // best-effort release on Ctrl+C / SIGTERM — process teardown skips finally/Dispose.
+  // guarded on stream.IsSome so we never delete a lock we don't own; default termination proceeds.
+  let onSignal (ctx: PosixSignalContext) =
+    if stream.IsSome then
+      log $"Signal {ctx.Signal} — releasing lock: {lockFilePath}"
+      deleteLock ()
+
+  let mutable signals: IDisposable list = []
+
+  let tryBreakStale () =
+    try
+      let fi = FileInfo lockFilePath
+
+      if fi.Exists && DateTime.UtcNow - fi.LastWriteTimeUtc > staleAfter then
+        log $"Breaking stale lock {lockFilePath} (age {DateTime.UtcNow - fi.LastWriteTimeUtc})"
+        File.Delete lockFilePath
+    with :? IOException ->
+      ()
+
+  async {
+    while stream.IsNone && sw.Elapsed < timeout do
+      try
+        log $"Trying acquire lock on {lockFilePath}"
+        // O_CREAT|O_EXCL — atomic across NFS/CSI shared volumes, unlike FileShare modes
+        let fs =
+          new FileStream(lockFilePath, FileMode.CreateNew, FileAccess.Write, FileShare.None)
+
+        let bytes =
+          Text.Encoding.UTF8.GetBytes($"{Environment.MachineName}:{Process.GetCurrentProcess().Id}")
+
+        do! fs.WriteAsync(bytes, 0, bytes.Length) |> Async.AwaitTask
+        do! fs.FlushAsync() |> Async.AwaitTask
+        stream <- Some fs
+
+        signals <-
+          [ PosixSignal.SIGINT; PosixSignal.SIGTERM; PosixSignal.SIGQUIT ]
+          |> List.map (fun s -> PosixSignalRegistration.Create(s, Action<_> onSignal) :> IDisposable)
+
+        log $"Acquired lock on: {lockFilePath}"
+      with :? IOException ->
+        log $"Waiting to acquire lock on {lockFilePath}"
+        tryBreakStale ()
+        do! Async.Sleep 1000
+
+    match stream with
+    | Some fs ->
+      return
+        { new IDisposable with
+            member _.Dispose() =
+              signals |> List.iter _.Dispose()
+              fs.Dispose()
+
+              try
+                log $"Releasing lock: {lockFilePath}"
+                deleteLock ()
+                log $"Lock released: {lockFilePath}"
+              with :? IOException as x ->
+                log $"Failed releasing lock: {lockFilePath}\n%s{x.ToString()}"
+                () }
+    | None -> return raise (TimeoutException $"Could not acquire lock on {lockFilePath} within {timeout}")
+  }
 
 try
 
@@ -150,26 +226,39 @@ try
         File.Copy(path, newPath)
         newPath, true
 
-    if
-      args.Contains No_Cache
-      || Environment.GetEnvironmentVariable "FSY_NO_CACHE"
-         |> Option.ofObj
-         |> Option.contains "1"
-    then
-
-      let cacheDir = Path.Combine(cacheDirRoot, newFilePath |> Hash.sha256 |> Hash.short)
-
-      if Directory.Exists cacheDir then
-        if verbose then
-          printfn $"Deleting directory %s{cacheDir} recursively..."
-
-        Directory.Delete(cacheDir, true)
-
     try
       let sw = Stopwatch.StartNew()
 
+      let lockDir =
+        Environment.GetEnvironmentVariable "FSY_LOCK_DIR"
+        |> Option.ofObj
+        |> Option.defaultValue (
+          let settings = NuGet.Configuration.Settings.LoadDefaultSettings null
+          NuGet.Configuration.SettingsUtility.GetGlobalPackagesFolder settings
+        )
+
+      let log = if verbose then printfn "%s" else ignore
+
       let output =
-        CompilerHost.getAssembly options (Queil.FSharp.FscHost.File newFilePath)
+        async {
+          use! _ = acquireRestoreLock lockDir (TimeSpan.FromMinutes 5.0) log
+
+          if
+            args.Contains No_Cache
+            || Environment.GetEnvironmentVariable "FSY_NO_CACHE"
+               |> Option.ofObj
+               |> Option.contains "1"
+          then
+            let cacheDir = Path.Combine(cacheDirRoot, newFilePath |> Hash.sha256 |> Hash.short)
+
+            if Directory.Exists cacheDir then
+              if verbose then
+                printfn $"Deleting directory %s{cacheDir} recursively..."
+
+              Directory.Delete(cacheDir, true)
+
+          return! CompilerHost.getAssembly options (Queil.FSharp.FscHost.File newFilePath)
+        }
         |> Async.RunSynchronously
 
       if verbose then
