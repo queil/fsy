@@ -179,14 +179,21 @@ try
 
     printfn "Done"
 
-  let runScript (args: ParseResults<ScriptArgs>) (originalFilePath: string) =
+  let compileWith
+    (symbols: string list)
+    (cacheDirOpt: string option)
+    (noCache: bool)
+    (shadowDirOpt: string option)
+    (originalFilePath: string)
+    (cont: CompileOutput -> unit)
+    =
     let compilerOptions =
       { CompilerOptions.Default with
           IncludeHostEntryAssembly = false
           Target = "exe"
           Standalone = false
           LangVersion = Some "preview"
-          Symbols = args.GetResults Symbol
+          Symbols = symbols
           Args =
             fun scriptPath refs opts ->
               [ "--noframework"
@@ -194,7 +201,7 @@ try
                 yield! CompilerOptions.Default.Args scriptPath refs opts ] }
 
     let cacheDirRoot =
-      args.TryGetResult Cache_Dir
+      cacheDirOpt
       |> Option.orElseWith (fun () -> Environment.GetEnvironmentVariable "FSY_CACHE_DIR" |> Option.ofObj)
       |> Option.defaultValue (Path.GetTempPath())
       |> fun p -> Path.Combine(p, ".fsy", $"%s{version}+%s{sha[..7]}")
@@ -205,7 +212,7 @@ try
           Compiler = compilerOptions
           Verbose = verbose
           Logger = if verbose then Some(fun msg -> printfn $"{msg}") else None
-          AutoLoadNugetReferences = cmd.Contains Run
+          AutoLoadNugetReferences = cmd.Contains Run || cmd.Contains Build
           UseCache = true }
       |> fun opts -> { opts with OutputDir = cacheDirRoot }
 
@@ -215,7 +222,7 @@ try
       | path ->
         let newPath =
           let scriptDir =
-            args.TryGetResult Shadow_Dir
+            shadowDirOpt
             |> Option.orElseWith (fun () -> Environment.GetEnvironmentVariable "FSY_SHADOW_DIR" |> Option.ofObj)
             |> Option.map (Directory.CreateDirectory >> _.FullName)
             |> Option.defaultValue (Path.GetDirectoryName path)
@@ -244,7 +251,7 @@ try
           use! _ = acquireRestoreLock lockDir (TimeSpan.FromMinutes 5.0) log
 
           if
-            args.Contains No_Cache
+            noCache
             || Environment.GetEnvironmentVariable "FSY_NO_CACHE"
                |> Option.ofObj
                |> Option.contains "1"
@@ -264,7 +271,7 @@ try
       if verbose then
         printfn $"fsch: {sw.ElapsedMilliseconds} ms"
 
-      output.Assembly.Value.EntryPoint.Invoke(null, Array.empty) |> ignore
+      cont output
     finally
       if movedWithExtension then
         if verbose then
@@ -272,12 +279,96 @@ try
 
         File.Delete newFilePath
 
-  let getScript (args: ParseResults<ScriptArgs>) = Path.GetFullPath(args.GetResult Script)
+  let runScript (args: ParseResults<ScriptArgs>) (originalFilePath: string) =
+    compileWith
+      (args.GetResults ScriptArgs.Symbol)
+      (args.TryGetResult ScriptArgs.Cache_Dir)
+      (args.Contains ScriptArgs.No_Cache)
+      (args.TryGetResult ScriptArgs.Shadow_Dir)
+      originalFilePath
+      (fun output -> output.Assembly.Value.EntryPoint.Invoke(null, Array.empty) |> ignore)
+
+  // Lays out a runnable, framework-dependent app next to the cached assembly:
+  // the compiled script, its NuGet dependencies, FSharp.Core, and the
+  // runtimeconfig.json the dotnet host needs. Run with: dotnet <output>/<name>.dll
+  let buildArtifacts (output: CompileOutput) (scriptPath: string) (outputDir: string) =
+    Directory.CreateDirectory outputDir |> ignore
+    let appName = Path.GetFileNameWithoutExtension scriptPath
+
+    let appDll = Path.Combine(outputDir, $"{appName}.dll")
+    File.Copy(output.AssemblyFilePath, appDll, true)
+    printfn $"Copied assembly:   %s{appDll}"
+
+    let depsFile =
+      Path.Combine(Path.GetDirectoryName output.AssemblyFilePath, "fsch.deps")
+
+    let nugetDlls =
+      if File.Exists depsFile then
+        File.ReadAllLines depsFile
+        |> Array.filter (fun l -> l.StartsWith "n#")
+        |> Array.map (fun l -> l.Substring 2)
+      else
+        [||]
+
+    let copyDep (srcDll: string) =
+      let dst = Path.Combine(outputDir, Path.GetFileName srcDll)
+      File.Copy(srcDll, dst, true)
+      printfn $"Copied dependency: %s{dst}"
+
+    nugetDlls |> Array.iter copyDep
+
+    let fsharpCore = typeof<int list>.Assembly.Location
+
+    if
+      nugetDlls
+      |> Array.exists (fun d -> Path.GetFileName d = Path.GetFileName fsharpCore)
+      |> not
+    then
+      copyDep fsharpCore
+
+    let v = Environment.Version
+
+    let runtimeConfig =
+      $$"""{
+  "runtimeOptions": {
+    "tfm": "net{{v.Major}}.0",
+    "framework": {
+      "name": "Microsoft.NETCore.App",
+      "version": "{{v.Major}}.{{v.Minor}}.0"
+    },
+    "rollForward": "latestMinor"
+  }
+}
+"""
+
+    let rcPath = Path.Combine(outputDir, $"{appName}.runtimeconfig.json")
+    File.WriteAllText(rcPath, runtimeConfig)
+    printfn $"Wrote runtimeconfig: %s{rcPath}"
+    printfn ""
+    printfn $"Done. Run it with:  dotnet %s{appDll}"
+
+  let buildScript (args: ParseResults<BuildArgs>) (originalFilePath: string) =
+    let outputDir = args.GetResult BuildArgs.Output_Dir |> Path.GetFullPath
+
+    compileWith
+      (args.GetResults BuildArgs.Symbol)
+      (args.TryGetResult BuildArgs.Cache_Dir)
+      (args.Contains BuildArgs.No_Cache)
+      (args.TryGetResult BuildArgs.Shadow_Dir)
+      originalFilePath
+      (fun output -> buildArtifacts output originalFilePath outputDir)
+
+  let getScript (args: ParseResults<ScriptArgs>) =
+    Path.GetFullPath(args.GetResult ScriptArgs.Script)
 
   match cmd.GetSubCommand() with
   | Run args ->
     let scriptFullPath = args |> getScript
     runScript args scriptFullPath
+
+  | Build args ->
+    let scriptFullPath = Path.GetFullPath(args.GetResult BuildArgs.Script)
+    buildScript args scriptFullPath
 
   | Version -> printfn $"fsy %s{version}+%s{sha}"
   | Install_Fsx_Extensions args ->
